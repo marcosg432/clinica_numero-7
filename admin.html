@@ -1134,17 +1134,15 @@
           return;
         }
 
-        // Construir URL de forma explícita e absoluta
+        // Construir URL usando API_URL configurada (produção ou local)
         let url;
+        const baseUrl = API_URL.endsWith('/tratamentos')
+          ? API_URL
+          : `${API_URL.replace(/\/$/, '')}/tratamentos`;
         if (isEdit) {
-          // Garantir que a URL seja exatamente o que esperamos
-          url = `http://localhost:3000/api/tratamentos/${id}`;
-          // Validar que a URL contém "tratamentos" (plural)
-          if (!url.includes('/tratamentos/')) {
-            throw new Error('URL incorreta construída. Deve conter /tratamentos/ (plural)');
-          }
+          url = `${baseUrl}/${id}`;
         } else {
-          url = `http://localhost:3000/api/tratamentos`;
+          url = baseUrl;
         }
         
         const method = isEdit ? 'PUT' : 'POST';
