@@ -216,7 +216,6 @@ async function loadTreatmentsHome() {
     console.warn('⚠️ Não foi possível carregar tratamentos da API. Mostrando versão estática.');
   }
 }
-}
 
 // Função para carregar tratamentos na página tratamentos.html
 async function loadTreatmentsPage() {
