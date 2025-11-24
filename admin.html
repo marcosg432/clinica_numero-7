@@ -816,12 +816,19 @@
 
     async function loadStats() {
       try {
+        console.log('📊 Carregando estatísticas...');
+        
+        // Usar apiRequest para todas as requisições autenticadas
+        const [tratamentosResponse, agendamentosResponse, avaliacoesResponse] = await Promise.all([
+          fetch(`${API_URL}/tratamentos?ativo=true&limit=100`).catch(e => ({ ok: false, json: () => ({ success: false }) })),
+          apiRequest(`${API_URL}/agendamento?limit=100`, { method: 'GET' }).catch(e => ({ ok: false, json: () => ({ success: false }) })),
+          fetch(`${API_URL}/avaliacoes?limit=100`).catch(e => ({ ok: false, json: () => ({ success: false }) }))
+        ]);
+
         const [tratamentos, agendamentos, avaliacoes] = await Promise.all([
-          fetch(`${API_URL}/tratamentos?limit=100`).then(r => r.json()),
-          fetch(`${API_URL}/agendamento`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          }).then(r => r.json()),
-          fetch(`${API_URL}/avaliacoes?limit=100`).then(r => r.json())
+          tratamentosResponse.json ? tratamentosResponse.json() : { success: false },
+          agendamentosResponse.json ? agendamentosResponse.json() : { success: false },
+          avaliacoesResponse.json ? avaliacoesResponse.json() : { success: false }
         ]);
 
         document.getElementById('stat-tratamentos').textContent = 
@@ -1161,34 +1168,53 @@
           url += `&status=${currentAgendamentoFilter}`;
         }
 
-        const response = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        console.log('📥 Carregando agendamentos do admin:', url);
+        
+        // Usar apiRequest helper que faz refresh automático
+        const response = await apiRequest(url, {
+          method: 'GET',
         });
 
-        const data = await response.json();
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`❌ Erro HTTP ${response.status}:`, errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+        }
 
-        if (data.success && data.data) {
+        const data = await response.json();
+        console.log('✅ Agendamentos recebidos:', data);
+        console.log(`📊 Total: ${data.data?.length || 0} agendamentos`);
+
+        if (data.success && data.data && Array.isArray(data.data)) {
           loading.style.display = 'none';
           table.style.display = 'table';
 
-          body.innerHTML = data.data.map(ag => `
+          if (data.data.length === 0) {
+            body.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Nenhum agendamento encontrado</td></tr>';
+          } else {
+            body.innerHTML = data.data.map(ag => `
             <tr>
               <td>${new Date(ag.dataAgendada || ag.dataEnvio || ag.criadoEm).toLocaleDateString('pt-BR')}</td>
               <td>${ag.nome}</td>
               <td>${ag.email}</td>
               <td>${ag.telefone}</td>
               <td>${ag.tratamento?.nome || 'N/A'}</td>
-              <td><span class="status ${ag.status}">${ag.status}</span></td>
+              <td><span class="status ${ag.status?.toLowerCase() || 'pendente'}">${ag.status || 'PENDENTE'}</span></td>
               <td class="actions">
                 <select onchange="updateAgendamentoStatus('${ag.id}', this.value)" class="btn-small">
                   <option value="PENDENTE" ${ag.status === 'PENDENTE' ? 'selected' : ''}>Pendente</option>
                   <option value="CONFIRMADO" ${ag.status === 'CONFIRMADO' ? 'selected' : ''}>Confirmar</option>
                   <option value="CANCELADO" ${ag.status === 'CANCELADO' ? 'selected' : ''}>Cancelar</option>
                 </select>
-                <button class="btn-small danger" onclick="deleteAgendamento('${ag.id}', '${ag.nome}')">Excluir</button>
+                <button class="btn-small danger" onclick="deleteAgendamento('${ag.id}', '${(ag.nome || '').replace(/'/g, "\\'")}')">Excluir</button>
               </td>
             </tr>
           `).join('');
+          }
+        } else {
+          loading.style.display = 'none';
+          body.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #999;">Nenhum agendamento encontrado</td></tr>';
+          console.warn('⚠️ Resposta da API não contém dados válidos:', data);
         }
       } catch (error) {
         loading.innerHTML = `<div class="error">Erro ao carregar agendamentos: ${error.message}</div>`;
@@ -1197,16 +1223,18 @@
 
     async function updateAgendamentoStatus(id, status) {
       try {
-        const response = await fetch(`${API_URL}/agendamento/${id}`, {
+        console.log(`🔄 Atualizando status do agendamento ${id} para ${status}`);
+        
+        const response = await apiRequest(`${API_URL}/agendamento/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ status })
         });
 
         if (response.ok) {
+          console.log('✅ Status atualizado com sucesso');
           loadAgendamentos();
           loadStats();
         } else {
@@ -1214,6 +1242,7 @@
           alert(data.error?.message || 'Erro ao atualizar status');
         }
       } catch (error) {
+        console.error('❌ Erro ao atualizar status:', error);
         alert(`Erro: ${error.message}`);
       }
     }
@@ -1222,12 +1251,14 @@
       if (!confirm(`Tem certeza que deseja excluir o agendamento de "${nome}"?`)) return;
 
       try {
-        const response = await fetch(`${API_URL}/agendamento/${id}`, {
+        console.log(`🗑️ Excluindo agendamento ${id}...`);
+        
+        const response = await apiRequest(`${API_URL}/agendamento/${id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
+          console.log('✅ Agendamento excluído com sucesso');
           loadAgendamentos();
           loadStats();
         } else {
@@ -1235,6 +1266,7 @@
           alert(data.error?.message || 'Erro ao excluir agendamento');
         }
       } catch (error) {
+        console.error('❌ Erro ao excluir agendamento:', error);
         alert(`Erro: ${error.message}`);
       }
     }

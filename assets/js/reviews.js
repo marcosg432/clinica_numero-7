@@ -9,7 +9,7 @@ const getApiUrl = () => {
   // Fallback para localhost em desenvolvimento
   return window.location.hostname === 'localhost' 
     ? 'http://localhost:3000/api' 
-    : 'https://seu-backend.up.railway.app/api';
+    : 'https://clinicanumero-7-production.up.railway.app/api';
 };
 if (!window.API_URL) {
   window.API_URL = getApiUrl();
