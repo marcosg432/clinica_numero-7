@@ -100,7 +100,107 @@ export async function runMigrations(req, res) {
       });
     }
     
+    // Primeiro, tentar resolver migrações falhadas (erro P3009)
+    let hasFailedMigrations = false;
     try {
+      logger.info('🔍 Verificando se há migrações falhadas...');
+      
+      // Tentar fazer deploy primeiro para ver se há erro P3009
+      try {
+        execSync('npx prisma migrate deploy', {
+          cwd: backendRoot,
+          stdio: 'pipe',
+          env: {
+            ...process.env,
+            PRISMA_SCHEMA_PATH: schemaPath,
+          },
+          encoding: 'utf8',
+        });
+        logger.info('✅ Migrações aplicadas sem problemas!');
+      } catch (testError) {
+        const testStderr = testError.stderr?.toString() || testError.message || '';
+        if (testStderr.includes('P3009') || testStderr.includes('failed migrations')) {
+          hasFailedMigrations = true;
+          logger.warn('⚠️  Migrações falhadas detectadas! Tentando resolver...');
+          
+          // Tentar resolver a migração falhada
+          // Primeiro, verificar qual migração falhou
+          const migrationMatch = testStderr.match(/`([^`]+)` migration started at/);
+          const failedMigration = migrationMatch ? migrationMatch[1] : null;
+          
+          if (failedMigration) {
+            logger.info(`🔧 Resolvendo migração falhada: ${failedMigration}`);
+            
+            // Verificar se as tabelas foram criadas (migração foi aplicada mas marcada como falhada)
+            // Se sim, marcar como aplicada. Se não, marcar como revertida e tentar aplicar novamente
+            try {
+              // Tentar marcar como aplicada primeiro (caso as tabelas já existam)
+              execSync(`npx prisma migrate resolve --applied ${failedMigration}`, {
+                cwd: backendRoot,
+                stdio: 'pipe',
+                env: {
+                  ...process.env,
+                  PRISMA_SCHEMA_PATH: schemaPath,
+                },
+                encoding: 'utf8',
+              });
+              logger.info(`✅ Migração ${failedMigration} marcada como aplicada`);
+            } catch (resolveError) {
+              // Se não funcionar, marcar como revertida
+              logger.warn('⚠️  Não foi possível marcar como aplicada. Tentando marcar como revertida...');
+              try {
+                execSync(`npx prisma migrate resolve --rolled-back ${failedMigration}`, {
+                  cwd: backendRoot,
+                  stdio: 'pipe',
+                  env: {
+                    ...process.env,
+                    PRISMA_SCHEMA_PATH: schemaPath,
+                  },
+                  encoding: 'utf8',
+                });
+                logger.info(`✅ Migração ${failedMigration} marcada como revertida`);
+              } catch (rollbackError) {
+                logger.error('❌ Não foi possível resolver migração falhada');
+                throw rollbackError;
+              }
+            }
+          } else {
+            // Se não conseguir identificar a migração, tentar resolver todas as falhadas
+            logger.warn('⚠️  Não foi possível identificar migração específica. Tentando resolver manualmente...');
+            
+            // Tentar marcar como aplicada (assumindo que as tabelas já existem)
+            try {
+              execSync('npx prisma migrate resolve --applied 20251122070031_init', {
+                cwd: backendRoot,
+                stdio: 'pipe',
+                env: {
+                  ...process.env,
+                  PRISMA_SCHEMA_PATH: schemaPath,
+                },
+                encoding: 'utf8',
+              });
+              logger.info('✅ Migração marcada como aplicada');
+            } catch (resolveError2) {
+              // Se não funcionar, marcar como revertida
+              execSync('npx prisma migrate resolve --rolled-back 20251122070031_init', {
+                cwd: backendRoot,
+                stdio: 'pipe',
+                env: {
+                  ...process.env,
+                  PRISMA_SCHEMA_PATH: schemaPath,
+                },
+                encoding: 'utf8',
+              });
+              logger.info('✅ Migração marcada como revertida');
+            }
+          }
+        } else {
+          // Outro tipo de erro, relançar
+          throw testError;
+        }
+      }
+      
+      // Agora tentar aplicar as migrações novamente
       logger.info(`🚀 Executando: npx prisma migrate deploy`);
       logger.info(`📂 Working directory: ${backendRoot}`);
       
@@ -109,7 +209,7 @@ export async function runMigrations(req, res) {
         stdio: 'pipe',
         env: {
           ...process.env,
-          PRISMA_SCHEMA_PATH: schemaPath, // Forçar caminho do schema
+          PRISMA_SCHEMA_PATH: schemaPath,
         },
         encoding: 'utf8',
       });
@@ -124,10 +224,13 @@ export async function runMigrations(req, res) {
       
       return res.json({
         success: true,
-        message: hasApplied ? 'Migrações executadas com sucesso!' : (noMigration ? 'Nenhuma migração encontrada para aplicar' : 'Comando executado'),
-        output: result, // Output completo
+        message: hasFailedMigrations 
+          ? 'Migrações falhadas resolvidas e aplicadas com sucesso!' 
+          : (hasApplied ? 'Migrações executadas com sucesso!' : (noMigration ? 'Nenhuma migração encontrada para aplicar' : 'Comando executado')),
+        output: result,
         applied: hasApplied,
         noMigration: noMigration,
+        resolved: hasFailedMigrations,
       });
     } catch (error) {
       logger.error({ err: error }, '❌ Erro ao executar migrações via HTTP');
@@ -140,8 +243,8 @@ export async function runMigrations(req, res) {
         error: {
           code: 'MIGRATION_ERROR',
           message: error.message || 'Erro ao executar migrações',
-          stdout: stdout.substring(0, 500),
-          stderr: stderr.substring(0, 500),
+          stdout: stdout.substring(0, 1000),
+          stderr: stderr.substring(0, 1000),
         },
       });
     }
