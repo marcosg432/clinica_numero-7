@@ -236,45 +236,82 @@ export async function runMigrations(req, res) {
               const migrationSql = fs.readFileSync(migrationSqlPath, 'utf8');
               logger.info('📄 Lendo SQL de migração...');
               
-              // Dividir o SQL em comandos e executar um por um
-              // Remover comentários e quebras de linha desnecessárias
-              const cleanSql = migrationSql
+              // Converter DATETIME para TIMESTAMP (PostgreSQL não suporta DATETIME)
+              let cleanSql = migrationSql
+                .replace(/DATETIME/g, 'TIMESTAMP') // Converter DATETIME para TIMESTAMP
                 .replace(/--.*$/gm, '') // Remover comentários
-                .replace(/^\s*$/gm, '') // Remover linhas vazias
                 .trim();
               
-              const commands = cleanSql
-                .split(';')
-                .map(cmd => cmd.trim())
-                .filter(cmd => cmd.length > 0 && !cmd.match(/^\s*$/));
+              // Dividir em blocos de comandos (cada CREATE TABLE, CREATE INDEX, etc)
+              // Usar uma abordagem mais robusta: dividir por linhas que começam com -- ou comandos principais
+              const sqlBlocks = [];
+              let currentBlock = '';
               
-              logger.info(`📋 Encontrados ${commands.length} comandos SQL para executar`);
-              
-              let executedCount = 0;
-              for (let i = 0; i < commands.length; i++) {
-                const command = commands[i] + ';'; // Adicionar ; de volta
-                if (command.trim()) {
-                  try {
-                    logger.info(`⚙️  Executando comando ${i + 1}/${commands.length}...`);
-                    await prisma.$executeRawUnsafe(command);
-                    executedCount++;
-                    logger.info(`✅ Comando ${i + 1} executado com sucesso`);
-                  } catch (sqlError) {
-                    // Ignorar erros de "já existe" e outros erros esperados
-                    if (sqlError.message.includes('already exists') || 
-                        sqlError.message.includes('duplicate') ||
-                        sqlError.message.includes('does not exist') ||
-                        sqlError.message.includes('relation') && sqlError.message.includes('already exists')) {
-                      logger.info(`ℹ️  Comando ${i + 1} ignorado (objeto já existe ou não necessário)`);
-                    } else {
-                      logger.warn(`⚠️  Erro ao executar comando ${i + 1}: ${sqlError.message}`);
-                      // Continuar mesmo com erro
-                    }
+              const lines = cleanSql.split('\n');
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('--')) {
+                  continue;
+                }
+                
+                currentBlock += line + '\n';
+                
+                // Se a linha termina com ; e não está dentro de uma string, é um comando completo
+                if (trimmed.endsWith(';') && !trimmed.includes("'") && !trimmed.includes('"')) {
+                  if (currentBlock.trim()) {
+                    sqlBlocks.push(currentBlock.trim());
+                    currentBlock = '';
                   }
                 }
               }
               
-              logger.info(`✅ ${executedCount}/${commands.length} comandos SQL executados`);
+              // Se sobrou algo, adicionar
+              if (currentBlock.trim()) {
+                sqlBlocks.push(currentBlock.trim());
+              }
+              
+              logger.info(`📋 Encontrados ${sqlBlocks.length} blocos SQL para executar`);
+              
+              let executedCount = 0;
+              let errorCount = 0;
+              const errors = [];
+              
+              for (let i = 0; i < sqlBlocks.length; i++) {
+                const command = sqlBlocks[i];
+                if (!command || command.length < 10) {
+                  continue;
+                }
+                
+                try {
+                  // Logar o início do comando (primeiras 50 caracteres)
+                  const commandPreview = command.substring(0, 50).replace(/\n/g, ' ');
+                  logger.info(`⚙️  Executando bloco ${i + 1}/${sqlBlocks.length}: ${commandPreview}...`);
+                  
+                  await prisma.$executeRawUnsafe(command);
+                  executedCount++;
+                  logger.info(`✅ Bloco ${i + 1} executado com sucesso`);
+                } catch (sqlError) {
+                  errorCount++;
+                  const errorMsg = sqlError.message || String(sqlError);
+                  
+                  // Ignorar apenas erros específicos de "já existe"
+                  if (errorMsg.includes('already exists') || 
+                      errorMsg.includes('duplicate key') ||
+                      (errorMsg.includes('relation') && errorMsg.includes('already exists'))) {
+                    logger.info(`ℹ️  Bloco ${i + 1} ignorado (objeto já existe): ${errorMsg.substring(0, 100)}`);
+                  } else {
+                    logger.error(`❌ Erro ao executar bloco ${i + 1}: ${errorMsg}`);
+                    errors.push(`Bloco ${i + 1}: ${errorMsg.substring(0, 200)}`);
+                    // NÃO continuar silenciosamente - logar o erro completo
+                  }
+                }
+              }
+              
+              logger.info(`✅ ${executedCount}/${sqlBlocks.length} blocos SQL executados (${errorCount} erros)`);
+              
+              if (errors.length > 0) {
+                logger.warn(`⚠️  Erros encontrados: ${errors.join('; ')}`);
+              }
               
               // Verificar novamente se a tabela foi criada
               try {
