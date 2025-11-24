@@ -1,0 +1,25 @@
+═══════════════════════════════════════════════════════════════
+   COMANDOS RÁPIDOS - COPIE E COLE UM POR VEZ
+═══════════════════════════════════════════════════════════════
+
+cd "C:\Users\andre\OneDrive\Área de Trabalho\Cópia_de_numero_7"
+
+dir index.html
+
+git init
+
+git remote remove origin
+git remote add origin https://github.com/marcosg432/clinica_numero-7.git
+
+git branch -M main
+
+git add .
+
+git status
+
+git commit -m "Fix: Corrigir configurações Railway e atualizar para PostgreSQL"
+
+git push -u origin main
+
+═══════════════════════════════════════════════════════════════
+

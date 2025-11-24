@@ -1,0 +1,107 @@
+═══════════════════════════════════════════════════════════════
+   COMANDOS PARA EXECUTAR MANUALMENTE NO TERMINAL
+═══════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANTE: Abra o CMD (Prompt de Comando) ou PowerShell e execute os comandos abaixo.
+
+═══════════════════════════════════════════════════════════════
+PASSO 1: Navegar para o diretório do projeto
+═══════════════════════════════════════════════════════════════
+
+cd "C:\Users\andre\OneDrive\Área de Trabalho\Cópia_de_numero_7"
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 2: Verificar se está no lugar certo
+═══════════════════════════════════════════════════════════════
+
+dir index.html
+
+(Se mostrar o arquivo index.html, está correto!)
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 3: Verificar se já existe .git no diretório errado
+═══════════════════════════════════════════════════════════════
+
+dir .git
+
+(Se mostrar a pasta .git, está OK. Se não mostrar, precisa inicializar.)
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 4: Remover .git do diretório home (se existir)
+═══════════════════════════════════════════════════════════════
+
+IF EXIST "C:\Users\andre\.git" (
+    rmdir /s /q "C:\Users\andre\.git"
+    echo .git removido do diretório errado
+)
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 5: Inicializar Git no diretório do projeto
+═══════════════════════════════════════════════════════════════
+
+git init
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 6: Configurar o remote (repositório GitHub)
+═══════════════════════════════════════════════════════════════
+
+git remote remove origin
+git remote add origin https://github.com/marcosg432/clinica_numero-7.git
+
+(Verificar se está correto:)
+git remote -v
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 7: Renomear branch para main
+═══════════════════════════════════════════════════════════════
+
+git branch -M main
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 8: Adicionar todos os arquivos do projeto
+═══════════════════════════════════════════════════════════════
+
+git add .
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 9: Verificar o que será enviado
+═══════════════════════════════════════════════════════════════
+
+git status
+
+(Você deve ver arquivos como index.html, backend/, assets/, etc.
+NÃO deve ver AppData, Chrome, etc.)
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 10: Fazer commit
+═══════════════════════════════════════════════════════════════
+
+git commit -m "Fix: Corrigir configurações Railway e atualizar para PostgreSQL"
+
+
+═══════════════════════════════════════════════════════════════
+PASSO 11: Fazer push para o GitHub
+═══════════════════════════════════════════════════════════════
+
+git push -u origin main
+
+
+═══════════════════════════════════════════════════════════════
+✅ PRONTO!
+═══════════════════════════════════════════════════════════════
+
+Após o push, o Railway detectará automaticamente as mudanças!
+
+⚠️ LEMBRE-SE: No Railway, configure o "Root Directory" como: backend
+
+═══════════════════════════════════════════════════════════════
+
