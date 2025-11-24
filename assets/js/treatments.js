@@ -49,157 +49,173 @@ console.log('🔍 treatments.js carregado');
 console.log('🌐 API URL final configurada:', window.API_URL);
 console.log('📍 URL atual da página:', window.location.href);
 
+// Tratamentos estáticos de fallback
+const tratamentosEstaticos = [
+  {
+    nome: 'Lentes de Contato Dental',
+    descricao: 'Lâminas ultrafinas planejadas digitalmente para entregar cor, forma e brilho sob medida.',
+    slug: 'lentes-de-contato-dental',
+    imagem: 'assets/img/home/tratamento-lentes.webp',
+    pageUrl: 'lentes-contato.html'
+  },
+  {
+    nome: 'Clareamento a Laser',
+    descricao: 'Gel exclusivo ativado por luz azul, com monitoramento de sensibilidade em tempo real.',
+    slug: 'clareamento-a-laser',
+    imagem: 'assets/img/home/tratamento-clareamento.webp',
+    pageUrl: 'clareamento-laser.html'
+  },
+  {
+    nome: 'Implantes de Carga Imediata',
+    descricao: 'Cirurgias guiadas por tomografia e prótese provisória instalada na sequência.',
+    slug: 'implantes-de-carga-imediata',
+    imagem: 'assets/img/home/tratamento-implantes.webp',
+    pageUrl: 'implantes-carga-imediata.html'
+  },
+  {
+    nome: 'Ortodontia Digital',
+    descricao: 'Escaneamento intraoral e acompanhamento remoto para movimentos controlados.',
+    slug: 'ortodontia-digital',
+    imagem: 'assets/img/home/tratamento-ortodontia.webp',
+    pageUrl: 'ortodontia-digital.html'
+  },
+  {
+    nome: 'Harmonização Facial',
+    descricao: 'Protocolos personalizados para realçar traços e valorizar o sorriso.',
+    slug: 'harmonizacao-facial',
+    imagem: 'assets/img/home/tratamento-harmonizacao.webp',
+    pageUrl: 'harmonizacao-facial.html'
+  }
+];
+
+// Função para renderizar cards de tratamentos
+function renderTreatmentCards(tratamentos, carousel) {
+  const htmlCards = tratamentos.map(tratamento => {
+    const pageUrl = tratamento.pageUrl || `tratamento.html?slug=${tratamento.slug}`;
+    const imagem = tratamento.imagem || `assets/img/home/tratamento-${tratamento.slug?.replace(/-/g, '-') || 'default'}.webp`;
+    const descricao = tratamento.descricao 
+      ? (tratamento.descricao.length > 80 ? tratamento.descricao.substring(0, 80) + '...' : tratamento.descricao)
+      : 'Tratamento personalizado com tecnologia de ponta.';
+
+    return `
+      <article class="treatment-card">
+        <div class="img-placeholder" data-label="${tratamento.nome}" style="--photo: url('${imagem}');"></div>
+        <h3>${tratamento.nome}</h3>
+        <p>${descricao}</p>
+        <a class="btn ghost" href="${pageUrl}">Saiba mais</a>
+      </article>
+    `;
+  });
+  
+  carousel.innerHTML = htmlCards.join('');
+  console.log(`✅ ${tratamentos.length} tratamentos renderizados`);
+}
+
 // Função para carregar tratamentos na home (index.html)
 async function loadTreatmentsHome() {
   console.log('📥 Carregando tratamentos para home...');
-  console.log('🔗 URL da requisição:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
+  console.log('🔗 API URL:', window.API_URL);
+  
+  const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
+  if (!carousel) {
+    console.error('❌ Elemento .treatments-carousel não encontrado!');
+    return;
+  }
   
   // Mostrar indicador de carregamento
-  const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
-  if (carousel) {
-    carousel.innerHTML = `
-      <div style="text-align: center; padding: 40px; color: #666; width: 100%;">
-        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
-        <p>Carregando tratamentos...</p>
-        <p style="font-size: 0.85em; color: #999; margin-top: 0.5rem;">Aguarde...</p>
-      </div>
-      <style>
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      </style>
-    `;
-  }
+  carousel.innerHTML = `
+    <div style="text-align: center; padding: 40px; color: #666; width: 100%;">
+      <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
+      <p>Carregando tratamentos...</p>
+    </div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  `;
 
   try {
-    // Timeout de 5 segundos (mais rápido)
+    // Tentar diferentes formatos de URL
+    const apiUrl = window.API_URL.endsWith('/api') ? window.API_URL : window.API_URL + '/api';
+    const url = `${apiUrl}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`;
+    
+    console.log('🌐 Tentando conectar:', url);
+    
+    // Timeout de 5 segundos
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       console.error('⏱️ TIMEOUT: Requisição demorou mais de 5 segundos');
       controller.abort();
     }, 5000);
     
-    console.log('🌐 Fazendo requisição para:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
     const startTime = Date.now();
-    
-    const response = await fetch(`${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`, {
+    const response = await fetch(url, {
       signal: controller.signal,
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-      }
+        'Content-Type': 'application/json',
+      },
+      mode: 'cors',
     });
     
     clearTimeout(timeoutId);
     const endTime = Date.now();
-    console.log(`⏱️ Requisição completada em ${endTime - startTime}ms`);
+    console.log(`⏱️ Resposta recebida em ${endTime - startTime}ms`);
     
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await response.text().catch(() => 'Erro desconhecido');
       console.error(`❌ Erro HTTP ${response.status}:`, errorText);
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
+      throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
     }
     
     const data = await response.json();
-    console.log('✅ Dados recebidos da API:', data);
+    console.log('✅ Dados recebidos:', data);
 
+    // Verificar se a resposta tem dados válidos
     if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
-      if (!carousel) {
-        console.error('❌ Elemento .treatments-carousel não encontrado após carregar dados!');
-        return;
-      }
-        const cardsAntigos = carousel.children.length;
-        console.log(`🔄 Carousel encontrado! Substituindo ${cardsAntigos} elementos por ${data.data.length} cards da API`);
-        
-        // Limpar mensagem de "Carregando..." se houver
-        carousel.innerHTML = '';
-        
-        const htmlCards = data.data.map(tratamento => {
-          // Mapear slugs para URLs das páginas
-          const slugToPage = {
-            'lentes-de-contato-dental': 'lentes-contato.html',
-            'clareamento-a-laser': 'clareamento-laser.html',
-            'implantes-de-carga-imediata': 'implantes-carga-imediata.html',
-            'ortodontia-digital': 'ortodontia-digital.html',
-            'harmonizacao-facial': 'harmonizacao-facial.html'
-          };
-          
-          const pageUrl = slugToPage[tratamento.slug] || `tratamento.html?slug=${tratamento.slug}`;
-          const imagem = tratamento.imagem || `assets/img/home/tratamento-${tratamento.slug?.replace(/-/g, '-') || 'default'}.webp`;
-          
-          // Usar descrição do banco, ou uma descrição padrão curta
-          const descricao = tratamento.descricao 
-            ? (tratamento.descricao.length > 80 ? tratamento.descricao.substring(0, 80) + '...' : tratamento.descricao)
-            : 'Tratamento personalizado com tecnologia de ponta.';
-
-          console.log(`  - ${tratamento.nome}: "${descricao.substring(0, 40)}..."`);
-
-          return `
-            <article class="treatment-card">
-              <div class="img-placeholder" data-label="${tratamento.nome}" style="--photo: url('${imagem}');"></div>
-              <h3>${tratamento.nome}</h3>
-              <p>${descricao}</p>
-              <a class="btn ghost" href="${pageUrl}">Saiba mais</a>
-            </article>
-          `;
-        });
-        
-        // Substituir o conteúdo
-        carousel.innerHTML = htmlCards.join('');
-        
-        console.log(`✅ Home atualizada: ${cardsAntigos} cards → ${data.data.length} cards da API`);
-        console.log(`   Tratamentos carregados: ${data.data.map(t => t.nome).join(', ')}`);
-      } else {
-        console.error('❌ Elemento .treatments-carousel ou #treatments-carousel não encontrado!');
-        console.error('   Procurando por:', document.querySelector('.treatments-carousel'));
-        console.error('   Procurando por:', document.getElementById('treatments-carousel'));
-      }
+      console.log(`✅ ${data.data.length} tratamentos encontrados na API`);
+      
+      // Mapear slugs para URLs das páginas
+      const slugToPage = {
+        'lentes-de-contato-dental': 'lentes-contato.html',
+        'clareamento-a-laser': 'clareamento-laser.html',
+        'implantes-de-carga-imediata': 'implantes-carga-imediata.html',
+        'ortodontia-digital': 'ortodontia-digital.html',
+        'harmonizacao-facial': 'harmonizacao-facial.html'
+      };
+      
+      // Converter dados da API para o formato esperado
+      const tratamentos = data.data.map(t => ({
+        nome: t.nome,
+        descricao: t.descricao,
+        slug: t.slug,
+        imagem: t.imagem,
+        pageUrl: slugToPage[t.slug] || `tratamento.html?slug=${t.slug}`
+      }));
+      
+      renderTreatmentCards(tratamentos, carousel);
+      console.log(`   Tratamentos: ${tratamentos.map(t => t.nome).join(', ')}`);
     } else {
-      console.warn('⚠️ Nenhum tratamento retornado da API:', data);
-      if (carousel) {
-        carousel.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><p>Nenhum tratamento disponível no momento.</p></div>';
-      }
+      console.warn('⚠️ API retornou sem dados válidos:', data);
+      console.log('📦 Usando tratamentos estáticos de fallback...');
+      renderTreatmentCards(tratamentosEstaticos, carousel);
     }
   } catch (error) {
-    console.error('❌ ERRO ao carregar tratamentos na home:', error);
+    console.error('❌ ERRO ao carregar tratamentos da API:', error);
     console.error('   Tipo:', error.name);
     console.error('   Mensagem:', error.message);
-    console.error('   URL tentada:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
     
-    // Mostrar mensagem de erro clara
-    const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
-    if (carousel) {
-      let errorMessage = '';
-      if (error.name === 'AbortError' || error.message.includes('aborted')) {
-        errorMessage = `
-          <div style="text-align: center; padding: 40px; color: #e74c3c;">
-            <p style="font-size: 1.2em; font-weight: 600; margin-bottom: 0.5rem;">⏱️ Tempo esgotado</p>
-            <p>O servidor demorou muito para responder (> 5s).</p>
-            <p style="font-size: 0.85em; color: #666; margin-top: 1rem;">Verifique se o backend está online.</p>
-          </div>
-        `;
-      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('CORS')) {
-        errorMessage = `
-          <div style="text-align: center; padding: 40px; color: #e74c3c;">
-            <p style="font-size: 1.2em; font-weight: 600; margin-bottom: 0.5rem;">🌐 Erro de conexão</p>
-            <p>Não foi possível conectar ao backend.</p>
-            <p style="font-size: 0.85em; color: #666; margin-top: 1rem; word-break: break-all;">URL: ${window.API_URL}</p>
-            <p style="font-size: 0.85em; color: #666;">Possível problema: CORS ou backend offline</p>
-          </div>
-        `;
-      } else {
-        errorMessage = `
-          <div style="text-align: center; padding: 40px; color: #e74c3c;">
-            <p style="font-size: 1.2em; font-weight: 600; margin-bottom: 0.5rem;">❌ Erro ao carregar</p>
-            <p>${error.message || 'Erro desconhecido'}</p>
-            <p style="font-size: 0.85em; color: #666; margin-top: 1rem;">Tente recarregar a página (F5)</p>
-          </div>
-        `;
-      }
-      carousel.innerHTML = errorMessage;
-    }
+    // Em caso de erro, mostrar tratamentos estáticos
+    console.log('📦 Usando tratamentos estáticos devido ao erro...');
+    renderTreatmentCards(tratamentosEstaticos, carousel);
+    
+    // Mostrar aviso discreto (opcional)
+    console.warn('⚠️ Não foi possível carregar tratamentos da API. Mostrando versão estática.');
   }
+}
 }
 
 // Função para carregar tratamentos na página tratamentos.html
