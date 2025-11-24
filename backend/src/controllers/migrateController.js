@@ -217,6 +217,32 @@ export async function runMigrations(req, res) {
           encoding: 'utf8',
         });
         
+        // SEMPRE verificar e criar os ENUMs primeiro (mesmo se as tabelas já existirem)
+        logger.info('🔧 Verificando e criando ENUMs necessários...');
+        try {
+          const createEnumsSql = `
+-- CreateEnum StatusAgendamento
+DO $$ BEGIN
+  CREATE TYPE "StatusAgendamento" AS ENUM ('PENDENTE', 'CONFIRMADO', 'CANCELADO');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- CreateEnum RoleUsuario
+DO $$ BEGIN
+  CREATE TYPE "RoleUsuario" AS ENUM ('ADMIN', 'EDITOR');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+`;
+          await prisma.$executeRawUnsafe(createEnumsSql);
+          logger.info('✅ ENUMs verificados/criados com sucesso');
+          result += '\n✅ ENUMs (StatusAgendamento, RoleUsuario) verified/created.';
+        } catch (enumError) {
+          logger.warn('⚠️  Erro ao criar ENUMs (podem já existir):', enumError.message);
+          // Continuar mesmo com erro (podem já existir)
+        }
+        
         // Verificar se o resultado diz "No pending migrations" mas as tabelas não existem
         if (result.includes('No pending migrations to apply') || result.includes('No pending migrations')) {
           logger.warn('⚠️  Prisma diz que não há migrações pendentes. Verificando se as tabelas realmente existem...');
@@ -236,27 +262,9 @@ export async function runMigrations(req, res) {
               const migrationSql = fs.readFileSync(migrationSqlPath, 'utf8');
               logger.info('📄 Lendo SQL de migração...');
               
-              // Adicionar criação dos ENUMs ANTES do SQL de migração
-              // PostgreSQL precisa que os ENUMs sejam criados antes das tabelas
-              const enumSql = `
--- CreateEnum
-DO $$ BEGIN
-  CREATE TYPE "StatusAgendamento" AS ENUM ('PENDENTE', 'CONFIRMADO', 'CANCELADO');
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
-
--- CreateEnum
-DO $$ BEGIN
-  CREATE TYPE "RoleUsuario" AS ENUM ('ADMIN', 'EDITOR');
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
-
-`;
-
               // Converter DATETIME para TIMESTAMP (PostgreSQL não suporta DATETIME)
-              let cleanSql = enumSql + migrationSql
+              // Nota: Os ENUMs já foram criados acima, não precisamos criar novamente aqui
+              let cleanSql = migrationSql
                 .replace(/DATETIME/g, 'TIMESTAMP') // Converter DATETIME para TIMESTAMP
                 .replace(/--.*$/gm, '') // Remover comentários
                 .trim();
