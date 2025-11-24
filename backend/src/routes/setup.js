@@ -9,8 +9,13 @@
 
 import express from 'express';
 import { createAdmin } from '../controllers/setupController.js';
+import { runMigrations } from '../controllers/migrateController.js';
 
 const router = express.Router();
+
+// Rota temporária para executar migrações
+// Protegida por secret key via header X-Setup-Secret
+router.post('/migrate', runMigrations);
 
 // Rota temporária para criar admin
 // Protegida por secret key via header X-Setup-Secret ou query ?secret=
