@@ -26,15 +26,17 @@ git push -u origin main
 
 ### 2. Deploy Backend no Railway (10 minutos)
 
+**⚠️ IMPORTANTE:** Se der erro "Error creating build plan", veja `CORRIGIR_RAILWAY.md`
+
 1. Acesse [railway.app](https://railway.app)
 2. New Project → Deploy from GitHub
 3. Selecione `clinica_numero-7`
-4. Configure root directory: `backend`
+4. **CRÍTICO:** Configure Root Directory como `backend` (veja `CORRIGIR_RAILWAY.md`)
 5. Adicione PostgreSQL database
-6. Configure variáveis de ambiente (veja `DEPLOY.md`)
+6. Configure variáveis de ambiente (veja `DEPLOY_RAILWAY.md`)
 7. **Copie a URL da API** (ex: `https://xxx.up.railway.app`)
 
-**Veja:** `DEPLOY.md` seção "Passo 2" para detalhes completos
+**Veja:** `DEPLOY_RAILWAY.md` para guia completo passo a passo
 
 ### 3. Deploy Frontend no Vercel (5 minutos)
 

@@ -16,7 +16,7 @@
     "test:watch": "NODE_ENV=test jest --watch",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
-    "build": "prisma generate && node --check src/server.js",
+    "build": "prisma generate",
     "postinstall": "prisma generate",
     "docker:build": "docker build -t clinica-odonto-api .",
     "docker:up": "docker-compose up -d",

@@ -40,13 +40,13 @@ git push -u origin main
 
 ### 2.2 Configurar o Backend
 
-1. No projeto criado, clique em **"Add Service"**
-2. Selecione **"GitHub Repo"** novamente
-3. Selecione o mesmo repositório
-4. Na seção **"Settings"**, configure:
-   - **Root Directory:** `backend`
-   - **Build Command:** `npm install && npx prisma generate`
-   - **Start Command:** `npm start`
+1. No projeto criado, você verá o serviço `clinica_numero-7`
+2. Clique no serviço para abrir
+3. Vá em **Settings** (ícone de engrenagem no canto superior direito)
+4. Na seção **Service**, encontre **Root Directory**
+5. **⚠️ IMPORTANTE:** Configure como: `backend` (apenas a palavra `backend`, sem aspas)
+6. Clique em **Save**
+7. O Railway fará redeploy automaticamente
 
 ### 2.3 Adicionar Banco de Dados PostgreSQL
 
