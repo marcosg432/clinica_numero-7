@@ -236,8 +236,27 @@ export async function runMigrations(req, res) {
               const migrationSql = fs.readFileSync(migrationSqlPath, 'utf8');
               logger.info('📄 Lendo SQL de migração...');
               
+              // Adicionar criação dos ENUMs ANTES do SQL de migração
+              // PostgreSQL precisa que os ENUMs sejam criados antes das tabelas
+              const enumSql = `
+-- CreateEnum
+DO $$ BEGIN
+  CREATE TYPE "StatusAgendamento" AS ENUM ('PENDENTE', 'CONFIRMADO', 'CANCELADO');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- CreateEnum
+DO $$ BEGIN
+  CREATE TYPE "RoleUsuario" AS ENUM ('ADMIN', 'EDITOR');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+`;
+
               // Converter DATETIME para TIMESTAMP (PostgreSQL não suporta DATETIME)
-              let cleanSql = migrationSql
+              let cleanSql = enumSql + migrationSql
                 .replace(/DATETIME/g, 'TIMESTAMP') // Converter DATETIME para TIMESTAMP
                 .replace(/--.*$/gm, '') // Remover comentários
                 .trim();
