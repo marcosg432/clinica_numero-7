@@ -43,28 +43,74 @@ export async function runMigrations(req, res) {
 
     logger.info('🔄 Executando migrações via HTTP endpoint...');
     
-    // Verificar se o diretório de migrações existe
-    const migrationsDir = join(__dirname, '..', '..', 'prisma', 'migrations');
+    // Determinar o diretório raiz do backend (onde está o package.json)
+    const backendRoot = join(__dirname, '..', '..');
+    const migrationsDir = join(backendRoot, 'prisma', 'migrations');
+    const schemaPath = join(backendRoot, 'prisma', 'schema.prisma');
     const fs = await import('fs');
+    const path = await import('path');
     
+    // Verificações detalhadas
     try {
+      logger.info(`📁 Backend root: ${backendRoot}`);
+      logger.info(`📁 Schema path: ${schemaPath}`);
+      logger.info(`📁 Migrations dir: ${migrationsDir}`);
+      
+      const schemaExists = fs.existsSync(schemaPath);
       const migrationsExist = fs.existsSync(migrationsDir);
+      
+      logger.info(`📄 Schema existe: ${schemaExists}`);
       logger.info(`📁 Diretório de migrações existe: ${migrationsExist}`);
-      logger.info(`📁 Caminho: ${migrationsDir}`);
       
       if (migrationsExist) {
         const migrations = fs.readdirSync(migrationsDir);
-        logger.info(`📋 Migrações encontradas: ${migrations.length}`, migrations);
+        logger.info(`📋 Migrações encontradas: ${migrations.length}`);
+        migrations.forEach(migration => {
+          const migrationPath = join(migrationsDir, migration);
+          const isDir = fs.statSync(migrationPath).isDirectory();
+          logger.info(`   - ${migration} (${isDir ? 'diretório' : 'arquivo'})`);
+          if (isDir) {
+            const files = fs.readdirSync(migrationPath);
+            logger.info(`     Arquivos: ${files.join(', ')}`);
+          }
+        });
+      } else {
+        logger.error('❌ Diretório de migrações NÃO encontrado!');
+        // Listar o que existe em prisma/
+        const prismaDir = join(backendRoot, 'prisma');
+        if (fs.existsSync(prismaDir)) {
+          const prismaContents = fs.readdirSync(prismaDir);
+          logger.info(`📂 Conteúdo de prisma/: ${prismaContents.join(', ')}`);
+        }
       }
     } catch (err) {
-      logger.warn('⚠️  Não foi possível verificar diretório de migrações:', err.message);
+      logger.error({ err }, '❌ Erro ao verificar diretórios');
+    }
+    
+    // Verificar se estamos no diretório correto
+    const packageJsonPath = join(backendRoot, 'package.json');
+    if (!fs.existsSync(packageJsonPath)) {
+      logger.error(`❌ package.json não encontrado em: ${packageJsonPath}`);
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'INVALID_WORKING_DIRECTORY',
+          message: `package.json não encontrado. Backend root: ${backendRoot}`,
+        },
+      });
     }
     
     try {
+      logger.info(`🚀 Executando: npx prisma migrate deploy`);
+      logger.info(`📂 Working directory: ${backendRoot}`);
+      
       const result = execSync('npx prisma migrate deploy', {
-        cwd: join(__dirname, '..', '..'),
+        cwd: backendRoot,
         stdio: 'pipe',
-        env: process.env,
+        env: {
+          ...process.env,
+          PRISMA_SCHEMA_PATH: schemaPath, // Forçar caminho do schema
+        },
         encoding: 'utf8',
       });
 
