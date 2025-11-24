@@ -313,8 +313,16 @@
       🔑 Senha: Verifique no Railway (variável ADMIN_PASSWORD)
     </p>
     <!-- ⚠️ BOTÕES TEMPORÁRIOS - REMOVER APÓS USO ⚠️ -->
-    <button onclick="executarMigracoes()" style="background: #ffc107; margin-bottom: 10px; width: 100%;">🗄️ Executar Migrações (Primeiro)</button>
-    <button onclick="criarAdmin()" style="background: #28a745; margin-bottom: 10px; width: 100%;">🔧 Criar Admin (Depois)</button>
+    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
+      <strong>⚠️ IMPORTANTE: Siga a ordem abaixo!</strong>
+      <ol style="margin: 10px 0 0 20px; padding: 0;">
+        <li style="margin-bottom: 5px;">Primeiro: Clique no botão <strong>AMARELO</strong> para criar as tabelas</li>
+        <li style="margin-bottom: 5px;">Depois: Clique no botão <strong>VERDE</strong> para criar o admin</li>
+        <li>Por último: Faça login normalmente</li>
+      </ol>
+    </div>
+    <button onclick="executarMigracoes()" style="background: #ffc107; color: #000; font-weight: bold; margin-bottom: 10px; width: 100%; padding: 12px; font-size: 16px;">🗄️ PASSO 1: Executar Migrações (Criar Tabelas)</button>
+    <button onclick="criarAdmin()" style="background: #28a745; margin-bottom: 10px; width: 100%; padding: 12px; font-size: 16px;">🔧 PASSO 2: Criar Admin (Depois das Migrações)</button>
     <button onclick="login()">Entrar</button>
   </div>
 
