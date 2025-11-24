@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import logger from '../config/logger.js';
+import prisma from '../config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -222,7 +223,6 @@ export async function runMigrations(req, res) {
           logger.warn('⚠️  Prisma diz que não há migrações pendentes, mas vamos verificar se as tabelas existem...');
           
           // Verificar se as tabelas realmente existem
-          const prisma = (await import('../config/database.js')).default;
           try {
             await prisma.$queryRaw`SELECT 1 FROM usuarios LIMIT 1`;
             logger.info('✅ Tabela usuarios existe!');
