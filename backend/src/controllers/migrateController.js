@@ -281,6 +281,27 @@ export async function runMigrations(req, res) {
                 await prisma.$queryRaw`SELECT 1 FROM usuarios LIMIT 1`;
                 logger.info('✅ Tabela usuarios criada com sucesso!');
                 
+                // Regenerar Prisma Client para sincronizar com o banco
+                logger.info('🔄 Regenerando Prisma Client...');
+                try {
+                  execSync('npx prisma generate', {
+                    cwd: backendRoot,
+                    stdio: 'pipe',
+                    env: {
+                      ...process.env,
+                      PRISMA_SCHEMA_PATH: schemaPath,
+                    },
+                    encoding: 'utf8',
+                  });
+                  logger.info('✅ Prisma Client regenerado');
+                  
+                  // Desconectar e reconectar para garantir sincronização
+                  await prisma.$disconnect();
+                  // O Prisma será reconectado automaticamente na próxima query
+                } catch (generateError) {
+                  logger.warn('⚠️  Não foi possível regenerar Prisma Client:', generateError.message);
+                }
+                
                 // Marcar migração como aplicada
                 try {
                   execSync('npx prisma migrate resolve --applied 20251122070031_init', {
@@ -297,7 +318,7 @@ export async function runMigrations(req, res) {
                   logger.warn('⚠️  Não foi possível marcar migração como aplicada, mas tabelas foram criadas');
                 }
                 
-                result += `\n✅ Tables created manually via SQL (${executedCount} commands executed). Migration marked as applied.`;
+                result += `\n✅ Tables created manually via SQL (${executedCount} commands executed). Prisma Client regenerated. Migration marked as applied.`;
               } catch (verifyError) {
                 logger.error('❌ Tabela ainda não existe após executar SQL!');
                 result += `\n⚠️ Warning: Tried to create tables but verification failed. Error: ${verifyError.message}`;

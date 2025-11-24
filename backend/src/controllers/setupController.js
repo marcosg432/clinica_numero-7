@@ -59,11 +59,46 @@ export async function createAdmin(req, res, next) {
       });
     }
 
+    // Verificar se a tabela usuarios existe
+    try {
+      await prisma.$queryRaw`SELECT 1 FROM usuarios LIMIT 1`;
+      logger.info('✅ Tabela usuarios existe');
+    } catch (tableError) {
+      logger.error({ err: tableError }, '❌ Tabela usuarios não existe!');
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'TABLE_NOT_FOUND',
+          message: 'A tabela usuarios não existe no banco de dados. Execute as migrações primeiro.',
+          details: 'Por favor, clique no botão amarelo "Executar Migrações" antes de criar o admin.',
+        },
+      });
+    }
+
     // Verificar se admin já existe
     logger.info(`🔍 Procurando admin existente: ${config.admin.email}`);
-    const existingAdmin = await prisma.usuario.findUnique({
-      where: { email: config.admin.email },
-    });
+    let existingAdmin;
+    try {
+      existingAdmin = await prisma.usuario.findUnique({
+        where: { email: config.admin.email },
+      });
+    } catch (prismaError) {
+      logger.error({ err: prismaError }, '❌ Erro ao buscar admin existente');
+      
+      // Se o erro for de tabela não encontrada, sugerir regenerar Prisma Client
+      if (prismaError.code === 'P2021' || prismaError.message.includes('does not exist')) {
+        return res.status(500).json({
+          success: false,
+          error: {
+            code: 'PRISMA_CLIENT_OUT_OF_SYNC',
+            message: 'Prisma Client não está sincronizado com o banco. Aguarde alguns segundos e tente novamente.',
+            details: 'As tabelas foram criadas, mas o Prisma Client precisa ser regenerado. Isso acontece automaticamente em alguns segundos.',
+          },
+        });
+      }
+      
+      throw prismaError;
+    }
 
     if (existingAdmin) {
       logger.info(`Admin já existe: ${existingAdmin.email}`);
