@@ -1,29 +1,21 @@
 {
   "version": 2,
-  "buildCommand": "node vercel-build.js",
-  "builds": [
+  "rewrites": [
     {
-      "src": "package.json",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
     },
     {
-      "src": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico|webp))",
-      "dest": "/$1"
+      "source": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico|webp))",
+      "destination": "/$1"
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1.html",
-      "check": true
+      "source": "/(.*)",
+      "destination": "/$1.html"
     },
     {
-      "src": "/",
-      "dest": "/index.html"
+      "source": "/",
+      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -44,9 +36,6 @@
         }
       ]
     }
-  ],
-  "env": {
-    "API_URL": "@api_url"
-  }
+  ]
 }
 
