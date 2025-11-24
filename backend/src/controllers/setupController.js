@@ -4,10 +4,25 @@ import config from '../config/env.js';
 import logger from '../config/logger.js';
 
 /**
- * Rota temporária para criar o admin
- * Protegida por uma secret key configurada via SETUP_SECRET
+ * ⚠️ ROTA TEMPORÁRIA DE SETUP - REMOVER APÓS CRIAR O ADMIN ⚠️
+ * 
+ * Esta rota deve ser DESATIVADA ou REMOVIDA após criar o admin pela primeira vez.
+ * 
+ * Para desativar: Defina DISABLE_SETUP_ROUTE=true no Railway
+ * Para remover: Delete os arquivos setup.js e setupController.js e remova do routes/index.js
  */
 export async function createAdmin(req, res, next) {
+  // Verificar se a rota foi desativada via variável de ambiente
+  if (process.env.DISABLE_SETUP_ROUTE === 'true') {
+    return res.status(404).json({
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: 'Setup route has been disabled',
+      },
+    });
+  }
+
   try {
     // Verificar secret key
     const setupSecret = process.env.SETUP_SECRET || 'temporary-setup-key-change-in-production';
@@ -84,4 +99,5 @@ export async function createAdmin(req, res, next) {
     next(error);
   }
 }
+
 

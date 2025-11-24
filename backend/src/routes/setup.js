@@ -1,3 +1,12 @@
+/**
+ * ⚠️ ROTA TEMPORÁRIA DE SETUP - REMOVER APÓS CRIAR O ADMIN ⚠️
+ * 
+ * Esta rota deve ser DESATIVADA ou REMOVIDA após criar o admin pela primeira vez.
+ * 
+ * Para desativar: Defina DISABLE_SETUP_ROUTE=true no Railway
+ * Para remover: Delete este arquivo e remova do routes/index.js
+ */
+
 import express from 'express';
 import { createAdmin } from '../controllers/setupController.js';
 
@@ -8,4 +17,5 @@ const router = express.Router();
 router.post('/admin', createAdmin);
 
 export default router;
+
 
