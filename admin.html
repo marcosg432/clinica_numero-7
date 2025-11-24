@@ -306,10 +306,11 @@
   <div id="login-section" class="login-form">
     <h2>🔐 Login Admin</h2>
     <div id="login-error"></div>
-    <input type="email" id="email" placeholder="Email" value="admin@clinica.com">
-    <input type="password" id="password" placeholder="Senha" value="Admin123!@">
+    <input type="email" id="email" placeholder="Email" value="admin@clinicaodontoazul.com.br">
+    <input type="password" id="password" placeholder="Senha" value="">
     <p style="font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 15px;">
-      💡 Email: <code>admin@clinica.com</code> | Senha: <code>Admin123!@</code>
+      💡 Email: <code>admin@clinicaodontoazul.com.br</code><br>
+      🔑 Senha: Verifique no Railway (variável ADMIN_PASSWORD)
     </p>
     <button onclick="login()">Entrar</button>
   </div>
@@ -517,17 +518,53 @@
 
   <script>
     // Configuração dinâmica da API URL
-    const getApiUrl = () => {
-      const metaTag = document.querySelector('meta[name="api-url"]');
-      if (metaTag && metaTag.content && metaTag.content !== '__API_URL__') {
-        return metaTag.content;
+    (function() {
+      function getApiUrl() {
+        // 1. Tentar usar window.API_URL se já existir
+        if (window.API_URL && !window.API_URL.includes('__API_URL__')) {
+          return window.API_URL;
+        }
+        
+        // 2. Tentar ler do meta tag
+        const metaTag = document.querySelector('meta[name="api-url"]');
+        if (metaTag && metaTag.content) {
+          const metaUrl = metaTag.content.trim();
+          // Rejeitar se contém placeholder ou URL genérica incorreta
+          if (metaUrl && 
+              metaUrl !== '__API_URL__' && 
+              !metaUrl.includes('__API_URL__') && 
+              !metaUrl.includes('seu-backend') &&
+              metaUrl.startsWith('http')) {
+            console.log('✅ URL do meta tag válida:', metaUrl);
+            return metaUrl;
+          } else {
+            console.warn('⚠️ Meta tag contém placeholder ou URL inválida:', metaUrl);
+          }
+        }
+        
+        // 3. Fallback baseado no ambiente
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' ||
+                            window.location.hostname === '';
+        
+        return isLocalhost 
+          ? 'http://localhost:3000/api' 
+          : 'https://clinicanumero-7-production.up.railway.app/api';
       }
-      // Fallback para localhost em desenvolvimento
-      return window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000/api' 
-        : 'https://seu-backend.up.railway.app/api';
-    };
-    const API_URL = getApiUrl();
+      
+      window.API_URL = getApiUrl();
+      console.log('🔧 Admin - API URL configurada:', window.API_URL);
+      
+      // Verificar se a URL está correta
+      if (window.API_URL.includes('seu-backend') || window.API_URL.includes('__API_URL__')) {
+        console.error('❌ ERRO: API_URL contém placeholder! Forçando URL correta...');
+        window.API_URL = 'https://clinicanumero-7-production.up.railway.app/api';
+        console.log('✅ API_URL corrigida para:', window.API_URL);
+      }
+    })();
+    
+    const API_URL = window.API_URL;
+    console.log('🌐 Admin - URL final que será usada:', API_URL);
     let token = localStorage.getItem('adminToken');
     let currentAgendamentoFilter = null;
 
@@ -545,26 +582,61 @@
 
       errorDiv.innerHTML = '';
 
+      console.log('🔐 Tentando fazer login...');
+      console.log('📧 Email:', email);
+      console.log('🔗 API URL:', API_URL);
+
       try {
-        const response = await fetch(`${API_URL}/auth/login`, {
+        const loginUrl = `${API_URL}/auth/login`;
+        console.log('🌐 Fazendo requisição para:', loginUrl);
+        
+        const response = await fetch(loginUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ email, password }),
+          mode: 'cors'
         });
 
-        const data = await response.json();
+        console.log('📥 Resposta recebida:', response.status);
 
-        if (response.ok) {
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Erro HTTP:', response.status, errorText);
+          let errorMessage = 'Erro ao fazer login';
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error?.message || errorData.message || errorMessage;
+          } catch (e) {
+            errorMessage = `Erro HTTP ${response.status}: ${errorText.substring(0, 100)}`;
+          }
+          errorDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
+          return;
+        }
+
+        const data = await response.json();
+        console.log('✅ Login bem-sucedido');
+
+        if (data.data && data.data.accessToken) {
           token = data.data.accessToken;
           localStorage.setItem('adminToken', token);
           document.getElementById('login-section').style.display = 'none';
           document.getElementById('dashboard').classList.add('active');
           loadDashboard();
         } else {
-          errorDiv.innerHTML = `<div class="error">${data.error?.message || 'Erro ao fazer login'}</div>`;
+          errorDiv.innerHTML = `<div class="error">Token não recebido do servidor</div>`;
         }
       } catch (error) {
-        errorDiv.innerHTML = `<div class="error">Erro de conexão: ${error.message}</div>`;
+        console.error('❌ Erro ao fazer login:', error);
+        let errorMessage = `Erro de conexão: ${error.message}`;
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorMessage = `Erro de conexão. Verifique se o backend está online. URL: ${API_URL.replace('/api', '')}/health`;
+        } else if (error.message.includes('CORS')) {
+          errorMessage = `Erro CORS: Configure FRONTEND_URL no Railway`;
+        }
+        errorDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
       }
     }
 

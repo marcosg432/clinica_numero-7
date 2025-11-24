@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Pega a URL da API da variável de ambiente do Vercel
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://seu-backend.up.railway.app/api';
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://clinicanumero-7-production.up.railway.app/api';
 
 console.log(`🔧 Configurando API_URL para: ${API_URL}`);
 
