@@ -32,16 +32,46 @@ async function loadTreatmentsHome() {
   console.log('📥 Carregando tratamentos para home...');
   console.log('🔗 URL da requisição:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
   
+  // Mostrar indicador de carregamento
+  const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
+  if (carousel) {
+    carousel.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #666; width: 100%;">
+        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
+        <p>Carregando tratamentos...</p>
+        <p style="font-size: 0.85em; color: #999; margin-top: 0.5rem;">Aguarde...</p>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    `;
+  }
+
   try {
-    // Timeout de 10 segundos
+    // Timeout de 5 segundos (mais rápido)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => {
+      console.error('⏱️ TIMEOUT: Requisição demorou mais de 5 segundos');
+      controller.abort();
+    }, 5000);
+    
+    console.log('🌐 Fazendo requisição para:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
+    const startTime = Date.now();
     
     const response = await fetch(`${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`, {
-      signal: controller.signal
+      signal: controller.signal,
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      }
     });
     
     clearTimeout(timeoutId);
+    const endTime = Date.now();
+    console.log(`⏱️ Requisição completada em ${endTime - startTime}ms`);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -53,8 +83,10 @@ async function loadTreatmentsHome() {
     console.log('✅ Dados recebidos da API:', data);
 
     if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
-      const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
-      if (carousel) {
+      if (!carousel) {
+        console.error('❌ Elemento .treatments-carousel não encontrado após carregar dados!');
+        return;
+      }
         const cardsAntigos = carousel.children.length;
         console.log(`🔄 Carousel encontrado! Substituindo ${cardsAntigos} elementos por ${data.data.length} cards da API`);
         
@@ -103,27 +135,47 @@ async function loadTreatmentsHome() {
       }
     } else {
       console.warn('⚠️ Nenhum tratamento retornado da API:', data);
-      // Se não houver dados, remover mensagem de "Carregando..."
-      const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
       if (carousel) {
         carousel.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><p>Nenhum tratamento disponível no momento.</p></div>';
       }
     }
   } catch (error) {
-    console.error('❌ Erro ao carregar tratamentos na home:', error);
-    console.error('Detalhes:', error.message);
-    console.error('URL tentada:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
+    console.error('❌ ERRO ao carregar tratamentos na home:', error);
+    console.error('   Tipo:', error.name);
+    console.error('   Mensagem:', error.message);
+    console.error('   URL tentada:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
     
-    // Mostrar mensagem de erro no carousel
+    // Mostrar mensagem de erro clara
     const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
     if (carousel) {
-      if (error.name === 'AbortError') {
-        carousel.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;"><p>⏱️ Tempo de carregamento excedido. Verifique sua conexão.</p></div>';
-      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        carousel.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;"><p>🌐 Erro de conexão. Verifique se o backend está online.</p><p style="font-size: 0.9em; margin-top: 10px; color: #666;">URL: ' + window.API_URL + '</p></div>';
+      let errorMessage = '';
+      if (error.name === 'AbortError' || error.message.includes('aborted')) {
+        errorMessage = `
+          <div style="text-align: center; padding: 40px; color: #e74c3c;">
+            <p style="font-size: 1.2em; font-weight: 600; margin-bottom: 0.5rem;">⏱️ Tempo esgotado</p>
+            <p>O servidor demorou muito para responder (> 5s).</p>
+            <p style="font-size: 0.85em; color: #666; margin-top: 1rem;">Verifique se o backend está online.</p>
+          </div>
+        `;
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('CORS')) {
+        errorMessage = `
+          <div style="text-align: center; padding: 40px; color: #e74c3c;">
+            <p style="font-size: 1.2em; font-weight: 600; margin-bottom: 0.5rem;">🌐 Erro de conexão</p>
+            <p>Não foi possível conectar ao backend.</p>
+            <p style="font-size: 0.85em; color: #666; margin-top: 1rem; word-break: break-all;">URL: ${window.API_URL}</p>
+            <p style="font-size: 0.85em; color: #666;">Possível problema: CORS ou backend offline</p>
+          </div>
+        `;
       } else {
-        carousel.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;"><p>❌ Erro ao carregar tratamentos. Tente recarregar a página.</p></div>';
+        errorMessage = `
+          <div style="text-align: center; padding: 40px; color: #e74c3c;">
+            <p style="font-size: 1.2em; font-weight: 600; margin-bottom: 0.5rem;">❌ Erro ao carregar</p>
+            <p>${error.message || 'Erro desconhecido'}</p>
+            <p style="font-size: 0.85em; color: #666; margin-top: 1rem;">Tente recarregar a página (F5)</p>
+          </div>
+        `;
       }
+      carousel.innerHTML = errorMessage;
     }
   }
 }
