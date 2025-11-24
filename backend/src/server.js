@@ -9,6 +9,9 @@ import apiRoutes from './routes/index.js';
 
 const app = express();
 
+// Trust proxy (necessário para Railway e outros proxies reversos)
+app.set('trust proxy', 1);
+
 // Security
 app.use(helmet({
   contentSecurityPolicy: {
