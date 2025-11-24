@@ -718,17 +718,33 @@
         loading.style.display = 'block';
         table.style.display = 'none';
 
-        const response = await fetch(`${API_URL}/tratamentos?limit=100`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const url = `${API_URL}/tratamentos?limit=100&orderBy=criadoEm&order=desc`;
+        console.log('📥 Carregando tratamentos do admin:', url);
+        
+        const response = await fetch(url, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         });
 
-        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
 
-        if (data.success && data.data) {
+        const data = await response.json();
+        console.log('✅ Tratamentos recebidos:', data);
+        console.log(`📊 Total: ${data.data?.length || 0} tratamentos`);
+
+        if (data.success && data.data && Array.isArray(data.data)) {
           loading.style.display = 'none';
           table.style.display = 'table';
 
-          body.innerHTML = data.data.map(t => `
+          if (data.data.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Nenhum tratamento encontrado</td></tr>';
+          } else {
+            body.innerHTML = data.data.map(t => `
             <tr>
               <td>${t.nome}</td>
               <td>${(t.descricao || '').substring(0, 80)}${(t.descricao || '').length > 80 ? '...' : ''}</td>
@@ -739,10 +755,17 @@
                 <button class="btn-small danger" onclick="deleteTratamento('${t.id || ''}', '${(t.nome || '').replace(/'/g, "\\'")}')">Excluir</button>
               </td>
             </tr>
-          `).join('');
+            `).join('');
+          }
+        } else {
+          loading.style.display = 'none';
+          body.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #999;">Nenhum tratamento encontrado</td></tr>';
+          console.warn('⚠️ Resposta da API não contém dados válidos:', data);
         }
       } catch (error) {
-        loading.innerHTML = `<div class="error">Erro ao carregar tratamentos: ${error.message}</div>`;
+        console.error('❌ Erro ao carregar tratamentos:', error);
+        loading.style.display = 'none';
+        loading.innerHTML = `<div class="error">Erro ao carregar tratamentos: ${error.message}<br><small>Verifique se você está logado e se o token é válido.</small></div>`;
       }
     }
 
@@ -1073,17 +1096,34 @@
         table.style.display = 'none';
 
         // Carregar TODAS as avaliações (aprovadas e não aprovadas) para o admin
-        const response = await fetch(`${API_URL}/avaliacoes?limit=100&orderBy=dataAvaliacao&order=desc`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        // IMPORTANTE: Não passar ?aprovado= para ver TODAS (aprovadas e não aprovadas)
+        const url = `${API_URL}/avaliacoes?limit=100&orderBy=dataAvaliacao&order=desc`;
+        console.log('📥 Carregando avaliações do admin:', url);
+        
+        const response = await fetch(url, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         });
 
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
         const data = await response.json();
+        console.log('✅ Avaliações recebidas:', data);
+        console.log(`📊 Total: ${data.data?.length || 0} avaliações`);
 
         if (data.success && data.data && Array.isArray(data.data)) {
           loading.style.display = 'none';
           table.style.display = 'table';
 
-          body.innerHTML = data.data.map(av => `
+          if (data.data.length === 0) {
+            body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Nenhuma avaliação encontrada</td></tr>';
+          } else {
+            body.innerHTML = data.data.map(av => `
             <tr>
               <td>${new Date(av.dataAvaliacao || av.criadoEm).toLocaleDateString('pt-BR')}</td>
               <td>${av.nome} ${av.avatar ? `(${av.avatar})` : ''}</td>

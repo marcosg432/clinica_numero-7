@@ -58,7 +58,7 @@ export function requireRole(...roles) {
   };
 }
 
-export function optionalAuth(req, res, next) {
+export async function optionalAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -68,7 +68,23 @@ export function optionalAuth(req, res, next) {
   try {
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, config.jwt.secret);
-    req.user = { id: decoded.userId };
+    
+    // Buscar usuário completo do banco para ter o role
+    const user = await prisma.usuario.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        role: true,
+        ativo: true,
+        lockedUntil: true,
+      },
+    });
+
+    if (user && user.ativo) {
+      req.user = user;
+    }
   } catch (error) {
     // Ignora erro, auth é opcional
   }

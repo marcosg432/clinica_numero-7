@@ -18,13 +18,36 @@ if (!window.API_URL) {
 async function loadReviews() {
   try {
     // Carregar apenas avaliações aprovadas para o site público
-    const response = await fetch(`${window.API_URL}/avaliacoes?aprovado=true&limit=10&orderBy=dataAvaliacao&order=desc`);
+    const apiUrl = window.API_URL.endsWith('/api') ? window.API_URL : window.API_URL + '/api';
+    const url = `${apiUrl}/avaliacoes?aprovado=true&limit=10&orderBy=dataAvaliacao&order=desc`;
+    
+    console.log('📥 Carregando avaliações da API:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      mode: 'cors',
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ Erro ao carregar avaliações: ${response.status}`);
+      // Se der erro, manter avaliações estáticas do HTML
+      return;
+    }
+
     const data = await response.json();
+    console.log('✅ Dados de avaliações recebidos:', data);
 
     if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
       const reviewsContainer = document.querySelector('.reviews-grid');
       if (reviewsContainer) {
-        // Limitar a 7 avaliações no site (conforme você mencionou que tem 7 no site)
+        console.log(`📊 ${data.data.length} avaliações encontradas na API`);
+        
+        // SUBSTITUIR todas as avaliações estáticas pelas da API
+        // Limitar a 7 avaliações no site
         const reviewsToShow = data.data.slice(0, 7);
         
         reviewsContainer.innerHTML = reviewsToShow.map(review => {
