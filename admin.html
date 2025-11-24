@@ -580,15 +580,54 @@
     // ⚠️ FUNÇÃO TEMPORÁRIA - REMOVER APÓS CRIAR O ADMIN ⚠️
     async function criarAdmin() {
       const errorDiv = document.getElementById('login-error');
-      errorDiv.innerHTML = '<div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-bottom: 10px;">⏳ Criando admin... Aguarde...</div>';
+      errorDiv.innerHTML = '<div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-bottom: 10px;">⏳ Testando conexão... Aguarde...</div>';
       
       console.log('🔧 Tentando criar admin...');
       console.log('🔗 API URL:', API_URL);
+      console.log('📍 Origem atual:', window.location.origin);
       
+      // Primeiro, testar se o backend está online
+      // API_URL pode ser "https://...up.railway.app/api" ou "https://...up.railway.app/api/"
+      let baseUrl = API_URL.endsWith('/api') ? API_URL.replace('/api', '') : API_URL.replace('/api/', '');
+      if (!baseUrl) {
+        // Fallback: remover qualquer /api no final
+        baseUrl = API_URL.split('/api')[0];
+      }
+      const healthUrl = `${baseUrl}/health`;
+      console.log('🏥 Testando health check:', healthUrl);
+      console.log('   Base URL extraída:', baseUrl);
+      
+      try {
+        const healthResponse = await fetch(healthUrl, {
+          method: 'GET',
+          mode: 'cors',
+          cache: 'no-cache'
+        });
+        
+        if (!healthResponse.ok) {
+          throw new Error(`Backend retornou status ${healthResponse.status}`);
+        }
+        
+        const healthData = await healthResponse.json();
+        console.log('✅ Backend está online:', healthData);
+        
+        errorDiv.innerHTML = '<div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-bottom: 10px;">⏳ Backend online! Criando admin... Aguarde...</div>';
+        
+      } catch (healthError) {
+        console.error('❌ Backend não está acessível:', healthError);
+        errorDiv.innerHTML = `<div class="error">
+          ❌ Backend não está acessível!<br>
+          <small>URL testada: ${healthUrl}</small><br>
+          <small>Erro: ${healthError.message}</small><br>
+          <small>Verifique se o Railway está online e se a URL está correta.</small>
+        </div>`;
+        return;
+      }
+      
+      // Agora tentar criar o admin
       try {
         const setupUrl = `${API_URL}/setup/admin`;
         console.log('🌐 Fazendo requisição para:', setupUrl);
-        console.log('📍 Origem atual:', window.location.origin);
         
         const response = await fetch(setupUrl, {
           method: 'POST',
