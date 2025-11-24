@@ -67,3 +67,6 @@ fetch('https://clinicanumero-7-production.up.railway.app/api/tratamentos?ativo=t
 2. Teste a URL `/api/tratamentos` no navegador  
 3. Me diga o que apareceu!
 
+
+
+

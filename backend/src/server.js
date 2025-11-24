@@ -25,23 +25,50 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS
+// CORS - Configuração melhorada para produção
 const allowedOrigins = config.frontendUrl 
   ? config.frontendUrl.split(',').map(url => url.trim())
   : ['http://localhost:8080', 'http://localhost:3000'];
 
+logger.info(`🌐 CORS configurado. Origens permitidas: ${allowedOrigins.join(', ')}`);
+
+// Função para verificar se a origem é permitida (suporta wildcards do Vercel)
+function isOriginAllowed(origin) {
+  if (!origin) return true; // Permitir requisições sem origem (curl, mobile apps)
+  
+  // Verificar se está na lista exata
+  if (allowedOrigins.includes(origin)) {
+    logger.info(`✅ CORS permitido (match exato): ${origin}`);
+    return true;
+  }
+  
+  // Verificar padrões do Vercel (*.vercel.app)
+  if (origin.includes('.vercel.app')) {
+    // Se qualquer URL do Vercel estiver configurada, permitir todos os subdomínios
+    const hasVercelUrl = allowedOrigins.some(url => url.includes('.vercel.app'));
+    if (hasVercelUrl) {
+      logger.info(`✅ CORS permitido (Vercel): ${origin}`);
+      return true;
+    }
+  }
+  
+  logger.warn(`❌ CORS bloqueado: ${origin}`);
+  logger.info(`📋 Origens permitidas: ${allowedOrigins.join(', ')}`);
+  return false;
+}
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error(`CORS: Origem não permitida: ${origin}. Configure FRONTEND_URL no Railway.`));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Setup-Secret'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Setup-Secret', 'Accept'],
+  exposedHeaders: ['Authorization'],
 }));
 
 // Body parser

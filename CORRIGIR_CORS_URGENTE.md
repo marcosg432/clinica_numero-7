@@ -85,3 +85,6 @@ https://clinica-numero-7.vercel.app
 
 **Após corrigir o CORS, os tratamentos e avaliações devem carregar normalmente!** ✅
 
+
+
+

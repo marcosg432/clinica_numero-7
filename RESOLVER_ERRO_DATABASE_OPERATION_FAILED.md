@@ -134,3 +134,5 @@ Se o erro persistir, verifique os logs do Railway:
 
 **Após criar o admin, o login deve funcionar!** ✅
 
+
+

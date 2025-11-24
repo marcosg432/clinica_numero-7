@@ -566,10 +566,138 @@
     const API_URL = window.API_URL;
     console.log('🌐 Admin - URL final que será usada:', API_URL);
     let token = localStorage.getItem('adminToken');
+    let refreshToken = localStorage.getItem('adminRefreshToken');
     let currentAgendamentoFilter = null;
+
+    // Sistema de refresh automático de token
+    async function refreshAccessToken() {
+      if (!refreshToken) {
+        console.warn('⚠️ Refresh token não encontrado');
+        return null;
+      }
+
+      try {
+        console.log('🔄 Renovando access token...');
+        const response = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success && data.data) {
+          token = data.data.accessToken;
+          refreshToken = data.data.refreshToken;
+          localStorage.setItem('adminToken', token);
+          localStorage.setItem('adminRefreshToken', refreshToken);
+          console.log('✅ Token renovado com sucesso');
+          return token;
+        }
+      } catch (error) {
+        console.error('❌ Erro ao renovar token:', error);
+        // Token expirado - fazer logout
+        logout();
+        return null;
+      }
+    }
+
+    // Função helper para fazer requisições com retry automático em caso de 401
+    async function apiRequest(url, options = {}) {
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      try {
+        let response = await fetch(url, {
+          ...options,
+          headers,
+          mode: 'cors',
+        });
+
+        // Se 401, tentar refresh e retry
+        if (response.status === 401 && refreshToken) {
+          console.log('🔄 Token expirado, tentando renovar...');
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            headers['Authorization'] = `Bearer ${newToken}`;
+            response = await fetch(url, {
+              ...options,
+              headers,
+              mode: 'cors',
+            });
+          }
+        }
+
+        return response;
+      } catch (error) {
+        console.error('❌ Erro na requisição:', error);
+        throw error;
+      }
+    }
+
+    // Função para diagnosticar problemas
+    async function diagnoseConnection() {
+      const diagnostics = {
+        apiUrl: API_URL,
+        token: token ? 'Presente' : 'Ausente',
+        refreshToken: refreshToken ? 'Presente' : 'Ausente',
+        backendStatus: 'Desconhecido',
+        cors: 'Desconhecido',
+        auth: 'Desconhecido',
+      };
+
+      try {
+        // Testar health check (sem auth)
+        const healthResponse = await fetch(`${API_URL.replace('/api', '')}/health`);
+        diagnostics.backendStatus = healthResponse.ok ? 'Online' : `Erro ${healthResponse.status}`;
+
+        // Testar CORS
+        try {
+          const corsResponse = await fetch(`${API_URL}/tratamentos?limit=1`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            mode: 'cors',
+          });
+          diagnostics.cors = corsResponse.ok || corsResponse.status === 401 ? 'OK' : `Erro ${corsResponse.status}`;
+        } catch (corsError) {
+          diagnostics.cors = `Erro: ${corsError.message}`;
+        }
+
+        // Testar autenticação
+        if (token) {
+          try {
+            const authResponse = await apiRequest(`${API_URL}/auth/profile`);
+            diagnostics.auth = authResponse.ok ? 'OK' : `Erro ${authResponse.status}`;
+          } catch (authError) {
+            diagnostics.auth = `Erro: ${authError.message}`;
+          }
+        }
+      } catch (error) {
+        diagnostics.error = error.message;
+      }
+
+      console.log('🔍 Diagnóstico de Conexão:', diagnostics);
+      return diagnostics;
+    }
 
     // Testar conexão
     window.addEventListener('DOMContentLoaded', async () => {
+      // Executar diagnóstico
+      await diagnoseConnection();
+
       if (token) {
         checkAuth();
       }
@@ -624,7 +752,10 @@
 
         if (data.data && data.data.accessToken) {
           token = data.data.accessToken;
+          refreshToken = data.data.refreshToken;
           localStorage.setItem('adminToken', token);
+          localStorage.setItem('adminRefreshToken', refreshToken);
+          console.log('✅ Login bem-sucedido, tokens salvos');
           document.getElementById('login-section').style.display = 'none';
           document.getElementById('dashboard').classList.add('active');
           loadDashboard();
@@ -654,12 +785,12 @@
           document.getElementById('dashboard').classList.add('active');
           loadDashboard();
         } else {
-          localStorage.removeItem('adminToken');
-          token = null;
+          console.warn('⚠️ Autenticação falhou, fazendo logout...');
+          logout();
         }
       } catch (error) {
-        localStorage.removeItem('adminToken');
-        token = null;
+        console.error('❌ Erro ao verificar autenticação:', error);
+        logout();
       }
     }
 
@@ -709,6 +840,39 @@
       }
     }
 
+    // Função helper para processar resposta de tratamentos
+    async function handleTratamentosResponse(response, loading, table, body) {
+      const data = await response.json();
+      console.log('✅ Tratamentos recebidos:', data);
+      console.log(`📊 Total: ${data.data?.length || 0} tratamentos`);
+
+      if (data.success && data.data && Array.isArray(data.data)) {
+        loading.style.display = 'none';
+        table.style.display = 'table';
+
+        if (data.data.length === 0) {
+          body.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Nenhum tratamento encontrado</td></tr>';
+        } else {
+          body.innerHTML = data.data.map(t => `
+          <tr>
+            <td>${t.nome}</td>
+            <td>${(t.descricao || '').substring(0, 80)}${(t.descricao || '').length > 80 ? '...' : ''}</td>
+            <td>${t.slug}</td>
+            <td>${t.ativo ? '<span class="badge success">Ativo</span>' : '<span class="badge danger">Inativo</span>'}</td>
+            <td class="actions">
+              <button class="btn-small" onclick="editTratamento('${t.id || ''}')">Editar</button>
+              <button class="btn-small danger" onclick="deleteTratamento('${t.id || ''}', '${(t.nome || '').replace(/'/g, "\\'")}')">Excluir</button>
+            </td>
+          </tr>
+          `).join('');
+        }
+      } else {
+        loading.style.display = 'none';
+        body.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #999;">Nenhum tratamento encontrado</td></tr>';
+        console.warn('⚠️ Resposta da API não contém dados válidos:', data);
+      }
+    }
+
     // ============ TRATAMENTOS ============
     async function loadTratamentos() {
       const loading = document.getElementById('tratamentos-loading');
@@ -721,48 +885,37 @@
 
         const url = `${API_URL}/tratamentos?limit=100&orderBy=criadoEm&order=desc`;
         console.log('📥 Carregando tratamentos do admin:', url);
+        console.log('🔑 Token presente:', !!token);
         
-        const response = await fetch(url, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+        // Usar apiRequest helper que faz refresh automático
+        const response = await apiRequest(url, {
+          method: 'GET',
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-        }
-
-        const data = await response.json();
-        console.log('✅ Tratamentos recebidos:', data);
-        console.log(`📊 Total: ${data.data?.length || 0} tratamentos`);
-
-        if (data.success && data.data && Array.isArray(data.data)) {
-          loading.style.display = 'none';
-          table.style.display = 'table';
-
-          if (data.data.length === 0) {
-            body.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Nenhum tratamento encontrado</td></tr>';
-          } else {
-            body.innerHTML = data.data.map(t => `
-            <tr>
-              <td>${t.nome}</td>
-              <td>${(t.descricao || '').substring(0, 80)}${(t.descricao || '').length > 80 ? '...' : ''}</td>
-              <td>${t.slug}</td>
-              <td>${t.ativo ? '<span class="badge success">Ativo</span>' : '<span class="badge danger">Inativo</span>'}</td>
-              <td class="actions">
-                <button class="btn-small" onclick="editTratamento('${t.id || ''}')">Editar</button>
-                <button class="btn-small danger" onclick="deleteTratamento('${t.id || ''}', '${(t.nome || '').replace(/'/g, "\\'")}')">Excluir</button>
-              </td>
-            </tr>
-            `).join('');
+          const errorText = await response.text();
+          console.error(`❌ Erro HTTP ${response.status}:`, errorText);
+          
+          // Tentar sem token se for 401 (rota pública)
+          if (response.status === 401) {
+            console.log('⚠️ Tentando carregar sem autenticação (rota pública)...');
+            const publicResponse = await fetch(url, {
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (publicResponse.ok) {
+              console.log('✅ Carregado via rota pública (sem auth)');
+              return await handleTratamentosResponse(publicResponse, loading, table, body);
+            }
           }
-        } else {
-          loading.style.display = 'none';
-          body.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #999;">Nenhum tratamento encontrado</td></tr>';
-          console.warn('⚠️ Resposta da API não contém dados válidos:', data);
+          
+          throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
         }
+
+        return await handleTratamentosResponse(response, loading, table, body);
       } catch (error) {
         console.error('❌ Erro ao carregar tratamentos:', error);
         loading.style.display = 'none';
@@ -1086,6 +1239,43 @@
       }
     }
 
+    // Função helper para processar resposta de avaliações
+    async function handleAvaliacoesResponse(response, loading, table, body) {
+      const data = await response.json();
+      console.log('✅ Avaliações recebidas:', data);
+      console.log(`📊 Total: ${data.data?.length || 0} avaliações`);
+
+      if (data.success && data.data && Array.isArray(data.data)) {
+        loading.style.display = 'none';
+        table.style.display = 'table';
+
+        if (data.data.length === 0) {
+          body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Nenhuma avaliação encontrada</td></tr>';
+        } else {
+          body.innerHTML = data.data.map(av => `
+          <tr>
+            <td>${new Date(av.dataAvaliacao || av.criadoEm).toLocaleDateString('pt-BR')}</td>
+            <td>${av.nome} ${av.avatar ? `(${av.avatar})` : ''}</td>
+            <td>${'⭐'.repeat(av.nota || 5)}</td>
+            <td>${(av.texto || '').substring(0, 100)}${(av.texto || '').length > 100 ? '...' : ''}</td>
+            <td>${av.aprovado ? '<span class="badge success">Sim</span>' : '<span class="badge danger">Não</span>'}</td>
+            <td class="actions">
+              <button class="btn-small" onclick="editAvaliacao('${av.id || ''}')">Editar</button>
+              <button class="btn-small ${av.aprovado ? 'danger' : 'success'}" onclick="toggleAvaliacaoAprovado('${av.id || ''}', ${!av.aprovado})">
+                ${av.aprovado ? 'Reprovar' : 'Aprovar'}
+              </button>
+              <button class="btn-small danger" onclick="deleteAvaliacao('${av.id || ''}', '${(av.nome || '').replace(/'/g, "\\'")}')">Excluir</button>
+            </td>
+          </tr>
+        `).join('');
+        }
+      } else {
+        loading.style.display = 'none';
+        body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">Nenhuma avaliação encontrada</td></tr>';
+        console.warn('⚠️ Resposta da API não contém dados válidos:', data);
+      }
+    }
+
     // ============ AVALIAÇÕES ============
     async function loadAvaliacoes() {
       const loading = document.getElementById('avaliacoes-loading');
@@ -1100,52 +1290,37 @@
         // IMPORTANTE: Não passar ?aprovado= para ver TODAS (aprovadas e não aprovadas)
         const url = `${API_URL}/avaliacoes?limit=100&orderBy=dataAvaliacao&order=desc`;
         console.log('📥 Carregando avaliações do admin:', url);
+        console.log('🔑 Token presente:', !!token);
         
-        const response = await fetch(url, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+        // Usar apiRequest helper que faz refresh automático
+        const response = await apiRequest(url, {
+          method: 'GET',
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-        }
-
-        const data = await response.json();
-        console.log('✅ Avaliações recebidas:', data);
-        console.log(`📊 Total: ${data.data?.length || 0} avaliações`);
-
-        if (data.success && data.data && Array.isArray(data.data)) {
-          loading.style.display = 'none';
-          table.style.display = 'table';
-
-          if (data.data.length === 0) {
-            body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Nenhuma avaliação encontrada</td></tr>';
-          } else {
-            body.innerHTML = data.data.map(av => `
-            <tr>
-              <td>${new Date(av.dataAvaliacao || av.criadoEm).toLocaleDateString('pt-BR')}</td>
-              <td>${av.nome} ${av.avatar ? `(${av.avatar})` : ''}</td>
-              <td>${'⭐'.repeat(av.nota || 5)}</td>
-              <td>${(av.texto || '').substring(0, 100)}${(av.texto || '').length > 100 ? '...' : ''}</td>
-              <td>${av.aprovado ? '<span class="badge success">Sim</span>' : '<span class="badge danger">Não</span>'}</td>
-              <td class="actions">
-                <button class="btn-small" onclick="editAvaliacao('${av.id || ''}')">Editar</button>
-                <button class="btn-small ${av.aprovado ? 'danger' : 'success'}" onclick="toggleAvaliacaoAprovado('${av.id || ''}', ${!av.aprovado})">
-                  ${av.aprovado ? 'Reprovar' : 'Aprovar'}
-                </button>
-                <button class="btn-small danger" onclick="deleteAvaliacao('${av.id || ''}', '${(av.nome || '').replace(/'/g, "\\'")}')">Excluir</button>
-              </td>
-            </tr>
-          `).join('');
+          const errorText = await response.text();
+          console.error(`❌ Erro HTTP ${response.status}:`, errorText);
+          
+          // Tentar sem token se for 401 (rota pública, mas mostrará só aprovadas)
+          if (response.status === 401) {
+            console.log('⚠️ Tentando carregar sem autenticação (mostrará apenas aprovadas)...');
+            const publicResponse = await fetch(`${url}&aprovado=true`, {
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (publicResponse.ok) {
+              console.log('✅ Carregado via rota pública (sem auth)');
+              return await handleAvaliacoesResponse(publicResponse, loading, table, body);
+            }
           }
-        } else {
-          loading.style.display = 'none';
-          body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">Nenhuma avaliação encontrada</td></tr>';
-          console.warn('⚠️ Resposta da API não contém dados válidos:', data);
+          
+          throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
         }
+
+        return await handleAvaliacoesResponse(response, loading, table, body);
       } catch (error) {
         console.error('❌ Erro ao carregar avaliações:', error);
         loading.style.display = 'none';
@@ -1344,9 +1519,12 @@
 
     function logout() {
       localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminRefreshToken');
       token = null;
+      refreshToken = null;
       document.getElementById('login-section').style.display = 'block';
       document.getElementById('dashboard').classList.remove('active');
+      console.log('👋 Logout realizado');
     }
   </script>
 </body>

@@ -7,3 +7,4 @@ npx prisma migrate deploy || echo "⚠️  Migrações podem já estar aplicadas
 echo "🚀 Iniciando servidor..."
 node src/server.js
 
+

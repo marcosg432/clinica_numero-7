@@ -12,7 +12,13 @@ const missingVars = requiredEnvVars.filter(key => !process.env[key]);
 
 if (missingVars.length > 0 && process.env.NODE_ENV !== 'test') {
   console.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
-  process.exit(1);
+  console.error(`⚠️  Railway deployment will fail without these variables!`);
+  // Não sair imediatamente em produção - deixar o Railway mostrar o erro
+  if (process.env.NODE_ENV === 'production') {
+    console.error(`⚠️  Continuing anyway, but the app may crash...`);
+  } else {
+    process.exit(1);
+  }
 }
 
 export default {

@@ -1,0 +1,98 @@
+═══════════════════════════════════════════════════════════════
+   COMANDOS FINAIS - EXECUTE NO CMD OU POWERSHELL
+═══════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANTE: Execute um comando de cada vez e aguarde terminar antes do próximo!
+
+═══════════════════════════════════════════════════════════════
+COMANDO 1: Navegar para o diretório do projeto
+═══════════════════════════════════════════════════════════════
+
+cd "C:\Users\andre\OneDrive\Área de Trabalho\Cópia_de_numero_7"
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 2: Verificar se está no lugar certo
+═══════════════════════════════════════════════════════════════
+
+dir index.html
+
+(Se mostrar o arquivo, está correto! Se não mostrar, o caminho está errado)
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 3: Remover .git do diretório errado (se existir)
+═══════════════════════════════════════════════════════════════
+
+IF EXIST "C:\Users\andre\.git" rmdir /s /q "C:\Users\andre\.git"
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 4: Inicializar Git no diretório correto
+═══════════════════════════════════════════════════════════════
+
+git init
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 5: Configurar remote
+═══════════════════════════════════════════════════════════════
+
+git remote remove origin
+git remote add origin https://github.com/marcosg432/clinica_numero-7.git
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 6: Renomear branch
+═══════════════════════════════════════════════════════════════
+
+git branch -M main
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 7: Adicionar arquivos
+═══════════════════════════════════════════════════════════════
+
+git add .
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 8: Verificar o que será enviado
+═══════════════════════════════════════════════════════════════
+
+git status
+
+(Você deve ver arquivos como index.html, backend/, assets/, etc.
+NÃO deve ver AppData, Chrome, etc.)
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 9: Fazer commit
+═══════════════════════════════════════════════════════════════
+
+git commit -m "Fix: Configurar Railway Root Directory e PostgreSQL"
+
+
+═══════════════════════════════════════════════════════════════
+COMANDO 10: Fazer push
+═══════════════════════════════════════════════════════════════
+
+git push -u origin main
+
+
+═══════════════════════════════════════════════════════════════
+✅ PRONTO!
+═══════════════════════════════════════════════════════════════
+
+Após o push:
+- O Railway detectará automaticamente
+- Fará um novo deploy com Root Directory = backend
+- Deve funcionar agora!
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+
+
