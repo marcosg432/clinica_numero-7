@@ -52,11 +52,19 @@ export async function runMigrations(req, res) {
       });
 
       logger.info('✅ Migrações executadas com sucesso via HTTP!');
+      logger.info('📋 Output completo:', result);
+      
+      // Verificar se realmente aplicou alguma migração
+      const outputLower = result.toLowerCase();
+      const hasApplied = outputLower.includes('applied') || outputLower.includes('created');
+      const noMigration = outputLower.includes('no migration found');
       
       return res.json({
         success: true,
-        message: 'Migrações executadas com sucesso!',
-        output: result.substring(0, 1000), // Primeiros 1000 caracteres
+        message: hasApplied ? 'Migrações executadas com sucesso!' : (noMigration ? 'Nenhuma migração encontrada para aplicar' : 'Comando executado'),
+        output: result, // Output completo
+        applied: hasApplied,
+        noMigration: noMigration,
       });
     } catch (error) {
       logger.error({ err: error }, '❌ Erro ao executar migrações via HTTP');

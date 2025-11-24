@@ -632,16 +632,30 @@
         
         const data = await response.json();
         console.log('📦 Dados recebidos:', data);
+        console.log('📋 Output completo:', JSON.stringify(data, null, 2));
         
         if (data.success) {
-          errorDiv.innerHTML = `<div style="background: #d4edda; padding: 10px; border-radius: 4px; margin-bottom: 10px; color: #155724;">
-            ✅ Migrações executadas com sucesso!<br>
-            <small>Tabelas criadas no banco de dados.</small><br>
-            <small>Você pode agora criar o admin.</small>
-          </div>`;
-          alert('✅ Migrações executadas!\n\nAgora você pode criar o admin clicando no botão verde.');
+          const outputText = data.output || '';
+          console.log('📄 Output das migrações:', outputText);
+          
+          // Verificar se realmente criou as tabelas
+          if (outputText.includes('No migration found') || outputText.includes('Already applied')) {
+            errorDiv.innerHTML = `<div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-bottom: 10px; color: #856404;">
+              ⚠️ Atenção: ${outputText.includes('No migration found') ? 'Nenhuma migração encontrada' : 'Migrações já aplicadas'}<br>
+              <small>Isso pode indicar que as migrações não foram executadas corretamente.</small><br>
+              <small>Output: ${outputText.substring(0, 200)}</small>
+            </div>`;
+          } else {
+            errorDiv.innerHTML = `<div style="background: #d4edda; padding: 10px; border-radius: 4px; margin-bottom: 10px; color: #155724;">
+              ✅ Migrações executadas com sucesso!<br>
+              <small>Tabelas criadas no banco de dados.</small><br>
+              <small>Output: ${outputText.substring(0, 200)}</small><br>
+              <small>Você pode agora criar o admin.</small>
+            </div>`;
+            alert('✅ Migrações executadas!\n\nAgora você pode criar o admin clicando no botão verde.');
+          }
         } else {
-          errorDiv.innerHTML = `<div class="error">❌ Erro: ${data.error?.message || 'Erro desconhecido'}</div>`;
+          errorDiv.innerHTML = `<div class="error">❌ Erro: ${data.error?.message || 'Erro desconhecido'}<br><small>Stdout: ${data.error?.stdout || ''}</small><br><small>Stderr: ${data.error?.stderr || ''}</small></div>`;
         }
       } catch (err) {
         console.error('❌ Erro de conexão:', err);
