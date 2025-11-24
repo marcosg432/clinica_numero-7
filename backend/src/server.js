@@ -38,7 +38,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Setup-Secret'],
 }));
 
 // Body parser
@@ -96,12 +96,13 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start server
-const PORT = config.port;
+const PORT = config.port || process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0'; // Railway precisa escutar em 0.0.0.0
 
-const server = app.listen(PORT, () => {
-  logger.info(`🚀 Server running on port ${PORT} in ${config.env} mode`);
-  logger.info(`📡 API available at http://localhost:${PORT}/api`);
-  logger.info(`❤️  Health check at http://localhost:${PORT}/health`);
+const server = app.listen(PORT, HOST, () => {
+  logger.info(`🚀 Server running on ${HOST}:${PORT} in ${config.env} mode`);
+  logger.info(`📡 API available at http://${HOST}:${PORT}/api`);
+  logger.info(`❤️  Health check at http://${HOST}:${PORT}/health`);
 });
 
 // Graceful shutdown
