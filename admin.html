@@ -1139,9 +1139,16 @@
               </td>
             </tr>
           `).join('');
+          }
+        } else {
+          loading.style.display = 'none';
+          body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">Nenhuma avaliação encontrada</td></tr>';
+          console.warn('⚠️ Resposta da API não contém dados válidos:', data);
         }
       } catch (error) {
-        loading.innerHTML = `<div class="error">Erro ao carregar avaliações: ${error.message}</div>`;
+        console.error('❌ Erro ao carregar avaliações:', error);
+        loading.style.display = 'none';
+        loading.innerHTML = `<div class="error">Erro ao carregar avaliações: ${error.message}<br><small>Verifique se você está logado e se o token é válido.</small></div>`;
       }
     }
 
