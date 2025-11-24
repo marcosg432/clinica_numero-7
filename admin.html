@@ -974,6 +974,21 @@
       }
     }
 
+    // Função para gerar slug a partir do nome (mesma lógica do backend)
+    function generateSlug(text) {
+      return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/\s+/g, '-') // Substitui espaços por hífens
+        .replace(/[^\w\-]+/g, '') // Remove caracteres especiais
+        .replace(/\-\-+/g, '-') // Remove múltiplos hífens
+        .replace(/^-+/, '') // Remove hífens do início
+        .replace(/-+$/, ''); // Remove hífens do fim
+    }
+
     function openTratamentoModal(id = null) {
       const modal = document.getElementById('modal-tratamento');
       const title = document.getElementById('modal-tratamento-title');
@@ -1003,6 +1018,28 @@
       }
       
       modal.classList.add('active');
+      
+      // Adicionar listener para gerar slug automaticamente quando nome mudar
+      const nomeInput = document.getElementById('tratamento-nome');
+      const slugInput = document.getElementById('tratamento-slug');
+      
+      // Remover listeners anteriores se existirem
+      const novoNomeInput = nomeInput.cloneNode(true);
+      nomeInput.parentNode.replaceChild(novoNomeInput, nomeInput);
+      
+      // Adicionar novo listener
+      document.getElementById('tratamento-nome').addEventListener('input', function(e) {
+        const nome = e.target.value.trim();
+        const currentSlug = slugInput.value.trim();
+        
+        // Só gerar slug automaticamente se:
+        // 1. Não está editando (ou seja, é novo tratamento)
+        // 2. O campo slug está vazio
+        // 3. O usuário não editou manualmente o slug recentemente
+        if (!isEdit && !currentSlug && nome) {
+          slugInput.value = generateSlug(nome);
+        }
+      });
     }
 
     async function loadTratamentoData(id) {
@@ -1082,7 +1119,11 @@
 
       // Adicionar campos opcionais apenas se preenchidos
       if (descricao) data.descricao = descricao;
-      if (slug) data.slug = slug;
+      // Slug é opcional - backend gera automaticamente se não fornecido
+      // Só enviar se foi preenchido manualmente
+      if (slug && slug.trim()) {
+        data.slug = slug.trim();
+      }
       if (imagem) data.imagem = imagem;
 
       try {
