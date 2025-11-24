@@ -577,7 +577,8 @@
 
     // Funções temporárias removidas - admin é criado automaticamente no startup do servidor
 
-    async function login() {
+    // Função de login - deve estar no escopo global para ser acessível via onclick
+    window.login = async function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const errorDiv = document.getElementById('login-error');
