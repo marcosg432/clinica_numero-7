@@ -26,6 +26,9 @@ npm-debug.log*
 *.sqlite-journal
 backend/prisma/database.sqlite*
 
+# Prisma migrations - NÃO IGNORAR (precisam estar no repositório)
+# backend/prisma/migrations/
+
 # IDE
 .vscode/
 .idea/
