@@ -1,31 +1,53 @@
 // Script para carregar tratamentos da API e sincronizar com o site público
 // Configuração dinâmica da API URL
 const getApiUrl = () => {
-  if (window.API_URL) {
+  // 1. Tentar usar window.API_URL se já existir
+  if (window.API_URL && !window.API_URL.includes('__API_URL__')) {
     console.log('✅ Usando window.API_URL existente:', window.API_URL);
     return window.API_URL;
   }
+  
+  // 2. Tentar ler do meta tag
   const metaTag = document.querySelector('meta[name="api-url"]');
-  if (metaTag && metaTag.content && metaTag.content !== '__API_URL__') {
-    console.log('✅ URL encontrada no meta tag:', metaTag.content);
-    return metaTag.content;
+  if (metaTag && metaTag.content) {
+    const metaUrl = metaTag.content.trim();
+    // Verificar se não é placeholder
+    if (metaUrl && metaUrl !== '__API_URL__' && !metaUrl.includes('__API_URL__') && metaUrl.startsWith('http')) {
+      console.log('✅ URL encontrada no meta tag:', metaUrl);
+      return metaUrl;
+    } else {
+      console.warn('⚠️ Meta tag contém placeholder ou URL inválida:', metaUrl);
+    }
+  } else {
+    console.warn('⚠️ Meta tag api-url não encontrada ou vazia');
   }
-  // Fallback para localhost em desenvolvimento
+  
+  // 3. Fallback baseado no ambiente
   const isLocalhost = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1';
+                      window.location.hostname === '127.0.0.1' ||
+                      window.location.hostname === '';
+  
   const fallbackUrl = isLocalhost 
     ? 'http://localhost:3000/api' 
     : 'https://clinicanumero-7-production.up.railway.app/api';
+  
   console.warn('⚠️ Usando URL fallback:', fallbackUrl);
+  console.warn('   Hostname atual:', window.location.hostname);
   return fallbackUrl;
 };
 
+// Inicializar API_URL
 if (!window.API_URL) {
+  window.API_URL = getApiUrl();
+} else if (window.API_URL.includes('__API_URL__')) {
+  // Se window.API_URL contém placeholder, tentar novamente
+  console.warn('⚠️ window.API_URL contém placeholder, tentando obter URL válida...');
   window.API_URL = getApiUrl();
 }
 
 console.log('🔍 treatments.js carregado');
-console.log('🌐 API URL final:', window.API_URL);
+console.log('🌐 API URL final configurada:', window.API_URL);
+console.log('📍 URL atual da página:', window.location.href);
 
 // Função para carregar tratamentos na home (index.html)
 async function loadTreatmentsHome() {
@@ -306,22 +328,60 @@ async function loadTreatmentsPage() {
 function init() {
   console.log('🚀 Inicializando carregamento de tratamentos...');
   console.log('Estado do DOM:', document.readyState);
+  console.log('API URL atual:', window.API_URL);
   
-  // Verificar qual página está aberta
-  if (document.querySelector('.treatments-carousel')) {
-    console.log('📄 Página detectada: index.html (home)');
-    loadTreatmentsHome();
+  // Verificar meta tag novamente (pode ter sido carregado depois)
+  const metaTag = document.querySelector('meta[name="api-url"]');
+  if (metaTag && metaTag.content && metaTag.content !== '__API_URL__' && !metaTag.content.includes('__API_URL__')) {
+    const newUrl = metaTag.content;
+    if (newUrl !== window.API_URL) {
+      console.log('🔄 Atualizando API_URL do meta tag:', newUrl);
+      window.API_URL = newUrl;
+    }
   }
-  if (document.querySelector('.treatment-showcase')) {
-    console.log('📄 Página detectada: tratamentos.html');
-    loadTreatmentsPage();
-  }
+  
+  // Pequeno delay para garantir que o DOM está totalmente carregado
+  setTimeout(() => {
+    // Verificar qual página está aberta
+    const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
+    const showcase = document.querySelector('.treatment-showcase');
+    
+    if (carousel) {
+      console.log('📄 Página detectada: index.html (home)');
+      console.log('✅ Elemento .treatments-carousel encontrado:', carousel);
+      loadTreatmentsHome();
+    } else if (showcase) {
+      console.log('📄 Página detectada: tratamentos.html');
+      console.log('✅ Elemento .treatment-showcase encontrado:', showcase);
+      loadTreatmentsPage();
+    } else {
+      console.warn('⚠️ Nenhuma página de tratamentos detectada!');
+      console.warn('   Elementos procurados:');
+      console.warn('   - .treatments-carousel:', document.querySelector('.treatments-carousel'));
+      console.warn('   - #treatments-carousel:', document.getElementById('treatments-carousel'));
+      console.warn('   - .treatment-showcase:', showcase);
+    }
+  }, 100);
 }
 
+// Múltiplas formas de garantir que seja executado
 if (document.readyState === 'loading') {
   console.log('⏳ DOM ainda carregando, aguardando DOMContentLoaded...');
   document.addEventListener('DOMContentLoaded', init);
+} else if (document.readyState === 'interactive') {
+  console.log('⏳ DOM interativo, aguardando um momento...');
+  setTimeout(init, 100);
 } else {
   console.log('✅ DOM já carregado, executando imediatamente...');
   init();
 }
+
+// Fallback: tentar novamente quando a janela carregar completamente
+window.addEventListener('load', () => {
+  console.log('📦 Window.onload disparado');
+  const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
+  if (carousel && carousel.innerHTML.includes('Carregando tratamentos...')) {
+    console.log('🔄 Tentando carregar novamente após window.onload...');
+    setTimeout(init, 200);
+  }
+});
