@@ -216,68 +216,131 @@ export async function runMigrations(req, res) {
           },
           encoding: 'utf8',
         });
-      } catch (deployError) {
-        // Se ainda falhar, tentar executar o SQL diretamente
-        const stderr = deployError.stderr?.toString() || deployError.message || '';
-        if (stderr.includes('No pending migrations to apply')) {
-          logger.warn('⚠️  Prisma diz que não há migrações pendentes, mas vamos verificar se as tabelas existem...');
+        
+        // Verificar se o resultado diz "No pending migrations" mas as tabelas não existem
+        if (result.includes('No pending migrations to apply') || result.includes('No pending migrations')) {
+          logger.warn('⚠️  Prisma diz que não há migrações pendentes. Verificando se as tabelas realmente existem...');
           
           // Verificar se as tabelas realmente existem
           try {
             await prisma.$queryRaw`SELECT 1 FROM usuarios LIMIT 1`;
-            logger.info('✅ Tabela usuarios existe!');
-            result = 'No pending migrations to apply. Tables already exist.';
+            logger.info('✅ Tabela usuarios existe! Migrações realmente aplicadas.');
+            result += '\n✅ Tables verified and exist.';
           } catch (tableError) {
-            logger.error('❌ Tabela usuarios NÃO existe! Forçando criação...');
+            logger.error('❌ Tabela usuarios NÃO existe! Prisma marcou como aplicada mas tabelas não foram criadas.');
+            logger.error('🔧 Forçando criação das tabelas via SQL...');
             
             // Executar o SQL de migração diretamente
             const migrationSqlPath = join(migrationsDir, '20251122070031_init', 'migration.sql');
             if (fs.existsSync(migrationSqlPath)) {
               const migrationSql = fs.readFileSync(migrationSqlPath, 'utf8');
-              logger.info('📄 Executando SQL de migração diretamente...');
+              logger.info('📄 Lendo SQL de migração...');
               
               // Dividir o SQL em comandos e executar um por um
-              const commands = migrationSql.split(';').filter(cmd => cmd.trim().length > 0);
+              // Remover comentários e quebras de linha desnecessárias
+              const cleanSql = migrationSql
+                .replace(/--.*$/gm, '') // Remover comentários
+                .replace(/^\s*$/gm, '') // Remover linhas vazias
+                .trim();
               
-              for (const command of commands) {
-                const trimmedCmd = command.trim();
-                if (trimmedCmd) {
+              const commands = cleanSql
+                .split(';')
+                .map(cmd => cmd.trim())
+                .filter(cmd => cmd.length > 0 && !cmd.match(/^\s*$/));
+              
+              logger.info(`📋 Encontrados ${commands.length} comandos SQL para executar`);
+              
+              let executedCount = 0;
+              for (let i = 0; i < commands.length; i++) {
+                const command = commands[i] + ';'; // Adicionar ; de volta
+                if (command.trim()) {
                   try {
-                    await prisma.$executeRawUnsafe(trimmedCmd);
-                    logger.info('✅ Comando SQL executado');
+                    logger.info(`⚙️  Executando comando ${i + 1}/${commands.length}...`);
+                    await prisma.$executeRawUnsafe(command);
+                    executedCount++;
+                    logger.info(`✅ Comando ${i + 1} executado com sucesso`);
                   } catch (sqlError) {
                     // Ignorar erros de "já existe" e outros erros esperados
-                    if (!sqlError.message.includes('already exists') && 
-                        !sqlError.message.includes('duplicate') &&
-                        !sqlError.message.includes('does not exist')) {
-                      logger.warn(`⚠️  Erro ao executar comando SQL: ${sqlError.message}`);
+                    if (sqlError.message.includes('already exists') || 
+                        sqlError.message.includes('duplicate') ||
+                        sqlError.message.includes('does not exist') ||
+                        sqlError.message.includes('relation') && sqlError.message.includes('already exists')) {
+                      logger.info(`ℹ️  Comando ${i + 1} ignorado (objeto já existe ou não necessário)`);
+                    } else {
+                      logger.warn(`⚠️  Erro ao executar comando ${i + 1}: ${sqlError.message}`);
+                      // Continuar mesmo com erro
                     }
                   }
                 }
               }
               
-              // Marcar migração como aplicada
-              try {
-                execSync('npx prisma migrate resolve --applied 20251122070031_init', {
-                  cwd: backendRoot,
-                  stdio: 'pipe',
-                  env: {
-                    ...process.env,
-                    PRISMA_SCHEMA_PATH: schemaPath,
-                  },
-                  encoding: 'utf8',
-                });
-                logger.info('✅ Migração marcada como aplicada');
-              } catch (resolveErr) {
-                logger.warn('⚠️  Não foi possível marcar migração como aplicada, mas tabelas foram criadas');
-              }
+              logger.info(`✅ ${executedCount}/${commands.length} comandos SQL executados`);
               
-              result = 'Tables created manually via SQL. Migration marked as applied.';
+              // Verificar novamente se a tabela foi criada
+              try {
+                await prisma.$queryRaw`SELECT 1 FROM usuarios LIMIT 1`;
+                logger.info('✅ Tabela usuarios criada com sucesso!');
+                
+                // Marcar migração como aplicada
+                try {
+                  execSync('npx prisma migrate resolve --applied 20251122070031_init', {
+                    cwd: backendRoot,
+                    stdio: 'pipe',
+                    env: {
+                      ...process.env,
+                      PRISMA_SCHEMA_PATH: schemaPath,
+                    },
+                    encoding: 'utf8',
+                  });
+                  logger.info('✅ Migração marcada como aplicada');
+                } catch (resolveErr) {
+                  logger.warn('⚠️  Não foi possível marcar migração como aplicada, mas tabelas foram criadas');
+                }
+                
+                result += `\n✅ Tables created manually via SQL (${executedCount} commands executed). Migration marked as applied.`;
+              } catch (verifyError) {
+                logger.error('❌ Tabela ainda não existe após executar SQL!');
+                result += `\n⚠️ Warning: Tried to create tables but verification failed. Error: ${verifyError.message}`;
+              }
             } else {
-              throw new Error(`Migration SQL file not found: ${migrationSqlPath}`);
+              logger.error(`❌ Arquivo de migração não encontrado: ${migrationSqlPath}`);
+              result += `\n❌ Error: Migration SQL file not found at ${migrationSqlPath}`;
             }
           }
-        } else {
+        }
+      } catch (deployError) {
+        // Se houver erro no comando migrate deploy, tentar executar SQL diretamente
+        const stderr = deployError.stderr?.toString() || deployError.message || '';
+        const stdout = deployError.stdout?.toString() || '';
+        
+        logger.error('❌ Erro ao executar migrate deploy:', stderr || stdout);
+        
+        // Tentar criar tabelas via SQL mesmo com erro
+        logger.warn('⚠️  Tentando criar tabelas via SQL mesmo com erro...');
+        
+        try {
+          const migrationSqlPath = join(migrationsDir, '20251122070031_init', 'migration.sql');
+          if (fs.existsSync(migrationSqlPath)) {
+            const migrationSql = fs.readFileSync(migrationSqlPath, 'utf8');
+            const cleanSql = migrationSql.replace(/--.*$/gm, '').replace(/^\s*$/gm, '').trim();
+            const commands = cleanSql.split(';').map(cmd => cmd.trim()).filter(cmd => cmd.length > 0);
+            
+            for (const command of commands) {
+              try {
+                await prisma.$executeRawUnsafe(command + ';');
+              } catch (sqlError) {
+                // Ignorar erros esperados
+                if (!sqlError.message.includes('already exists') && !sqlError.message.includes('duplicate')) {
+                  logger.warn(`⚠️  Erro SQL: ${sqlError.message}`);
+                }
+              }
+            }
+            
+            result = `Error in migrate deploy, but tables created manually via SQL. Original error: ${stderr || stdout}`;
+          } else {
+            throw deployError;
+          }
+        } catch (sqlFallbackError) {
           throw deployError;
         }
       }
