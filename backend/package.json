@@ -17,7 +17,7 @@
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "build": "prisma generate",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && npx prisma migrate deploy || echo 'Migrations may already be applied'",
     "docker:build": "docker build -t clinica-odonto-api .",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",

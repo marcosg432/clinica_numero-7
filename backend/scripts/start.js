@@ -20,18 +20,34 @@ if (!process.env.DATABASE_URL) {
 try {
   // Executar migrações
   console.log('📦 Executando: prisma migrate deploy');
-  execSync('npx prisma migrate deploy', {
+  console.log('🔗 DATABASE_URL:', process.env.DATABASE_URL ? 'Configurada' : 'NÃO CONFIGURADA!');
+  
+  const result = execSync('npx prisma migrate deploy', {
     cwd: join(__dirname, '..'),
-    stdio: 'inherit',
+    stdio: 'pipe',
     env: process.env,
+    encoding: 'utf8',
   });
+  
   console.log('✅ Migrações executadas com sucesso!');
+  if (result) {
+    console.log('📋 Resultado:', result.substring(0, 200));
+  }
 } catch (error) {
-  console.error('❌ Erro ao executar migrações:', error.message);
+  console.error('❌ Erro ao executar migrações:');
+  console.error('   Mensagem:', error.message);
+  if (error.stdout) {
+    console.error('   Stdout:', error.stdout.toString().substring(0, 500));
+  }
+  if (error.stderr) {
+    console.error('   Stderr:', error.stderr.toString().substring(0, 500));
+  }
+  
   // Em produção, continuar mesmo assim (pode ser que já estejam aplicadas)
   if (process.env.NODE_ENV === 'production') {
-    console.warn('⚠️  Continuando mesmo assim...');
+    console.warn('⚠️  Continuando mesmo assim... (migrações podem já estar aplicadas)');
   } else {
+    console.error('❌ Falhando em desenvolvimento...');
     process.exit(1);
   }
 }
