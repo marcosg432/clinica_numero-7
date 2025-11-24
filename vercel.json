@@ -2,18 +2,6 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/assets/(.*)",
-      "destination": "/assets/$1"
-    },
-    {
-      "source": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico|webp))",
-      "destination": "/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1.html"
-    },
-    {
       "source": "/",
       "destination": "/index.html"
     }
