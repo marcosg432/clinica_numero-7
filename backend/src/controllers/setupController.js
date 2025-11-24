@@ -38,7 +38,29 @@ export async function createAdmin(req, res, next) {
       });
     }
 
+    logger.info('🔧 Setup route called - Verificando configurações...');
+    logger.info(`   Admin Email: ${config.admin.email}`);
+    logger.info(`   Admin Name: ${config.admin.name}`);
+    logger.info(`   Admin Password está configurado: ${config.admin.password ? 'Sim' : 'Não'}`);
+
+    // Testar conexão com o banco primeiro
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      logger.info('✅ Conexão com banco de dados OK');
+    } catch (dbError) {
+      logger.error({ err: dbError }, '❌ Erro ao conectar com banco de dados');
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'DATABASE_CONNECTION_ERROR',
+          message: 'Não foi possível conectar ao banco de dados',
+          details: dbError.message,
+        },
+      });
+    }
+
     // Verificar se admin já existe
+    logger.info(`🔍 Procurando admin existente: ${config.admin.email}`);
     const existingAdmin = await prisma.usuario.findUnique({
       where: { email: config.admin.email },
     });
@@ -95,8 +117,23 @@ export async function createAdmin(req, res, next) {
       },
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar admin via setup route');
-    next(error);
+    logger.error({ 
+      err: error,
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack,
+    }, '❌ Erro ao criar admin via setup route');
+    
+    // Retornar erro mais detalhado para debug
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: error.code || 'DATABASE_ERROR',
+        message: error.message || 'Database operation failed',
+        details: error.meta || error.stack?.substring(0, 200),
+      },
+    });
   }
 }
 
