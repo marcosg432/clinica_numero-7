@@ -1,53 +1,45 @@
 // Script para carregar tratamentos da API e sincronizar com o site público
-// Configuração dinâmica da API URL
-const getApiUrl = () => {
-  // 1. Tentar usar window.API_URL se já existir
-  if (window.API_URL && !window.API_URL.includes('__API_URL__')) {
-    console.log('✅ Usando window.API_URL existente:', window.API_URL);
-    return window.API_URL;
-  }
-  
-  // 2. Tentar ler do meta tag
-  const metaTag = document.querySelector('meta[name="api-url"]');
-  if (metaTag && metaTag.content) {
-    const metaUrl = metaTag.content.trim();
-    // Verificar se não é placeholder
-    if (metaUrl && metaUrl !== '__API_URL__' && !metaUrl.includes('__API_URL__') && metaUrl.startsWith('http')) {
-      console.log('✅ URL encontrada no meta tag:', metaUrl);
-      return metaUrl;
-    } else {
-      console.warn('⚠️ Meta tag contém placeholder ou URL inválida:', metaUrl);
+// Configuração dinâmica da API URL (sem conflitar com outros arquivos)
+(function() {
+  // Função local para obter API URL (não entra em conflito com outros arquivos)
+  function getTreatmentsApiUrl() {
+    // 1. Tentar usar window.API_URL se já existir
+    if (window.API_URL && !window.API_URL.includes('__API_URL__')) {
+      return window.API_URL;
     }
-  } else {
-    console.warn('⚠️ Meta tag api-url não encontrada ou vazia');
+    
+    // 2. Tentar ler do meta tag
+    const metaTag = document.querySelector('meta[name="api-url"]');
+    if (metaTag && metaTag.content) {
+      const metaUrl = metaTag.content.trim();
+      // Verificar se não é placeholder
+      if (metaUrl && metaUrl !== '__API_URL__' && !metaUrl.includes('__API_URL__') && metaUrl.startsWith('http')) {
+        return metaUrl;
+      }
+    }
+    
+    // 3. Fallback baseado no ambiente
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.hostname === '';
+    
+    return isLocalhost 
+      ? 'http://localhost:3000/api' 
+      : 'https://clinicanumero-7-production.up.railway.app/api';
+  }
+
+  // Inicializar API_URL apenas se não existir
+  if (!window.API_URL) {
+    window.API_URL = getTreatmentsApiUrl();
+    console.log('🔧 treatments.js configurou API_URL:', window.API_URL);
+  } else if (window.API_URL.includes('__API_URL__')) {
+    // Se window.API_URL contém placeholder, tentar novamente
+    window.API_URL = getTreatmentsApiUrl();
+    console.log('🔄 treatments.js atualizou API_URL:', window.API_URL);
   }
   
-  // 3. Fallback baseado no ambiente
-  const isLocalhost = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1' ||
-                      window.location.hostname === '';
-  
-  const fallbackUrl = isLocalhost 
-    ? 'http://localhost:3000/api' 
-    : 'https://clinicanumero-7-production.up.railway.app/api';
-  
-  console.warn('⚠️ Usando URL fallback:', fallbackUrl);
-  console.warn('   Hostname atual:', window.location.hostname);
-  return fallbackUrl;
-};
-
-// Inicializar API_URL
-if (!window.API_URL) {
-  window.API_URL = getApiUrl();
-} else if (window.API_URL.includes('__API_URL__')) {
-  // Se window.API_URL contém placeholder, tentar novamente
-  console.warn('⚠️ window.API_URL contém placeholder, tentando obter URL válida...');
-  window.API_URL = getApiUrl();
-}
-
-console.log('🔍 treatments.js carregado');
-console.log('🌐 API URL final configurada:', window.API_URL);
-console.log('📍 URL atual da página:', window.location.href);
+  console.log('🔍 treatments.js carregado - API URL:', window.API_URL);
+})();
 
 // Tratamentos estáticos de fallback
 const tratamentosEstaticos = [
