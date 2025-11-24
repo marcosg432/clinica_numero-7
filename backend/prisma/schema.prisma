@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusAgendamento {
+  PENDENTE
+  CONFIRMADO
+  CANCELADO
+}
+
+enum RoleUsuario {
+  ADMIN
+  EDITOR
+}
+
+model Tratamento {
+  id          String   @id @default(uuid())
+  nome        String
+  descricao   String?
+  slug        String   @unique
+  imagem      String?
+  ativo       Boolean  @default(true)
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  agendamentos Agendamento[]
+
+  @@index([slug])
+  @@index([ativo])
+  @@map("tratamentos")
+}
+
+model Agendamento {
+  id          String            @id @default(uuid())
+  nome        String
+  telefone    String
+  email       String
+  tratamentoId String           @map("tratamento_id")
+  tratamento  Tratamento        @relation(fields: [tratamentoId], references: [id], onDelete: Cascade)
+  dataAgendada DateTime?        @map("data_agendada")
+  dataEnvio   DateTime          @default(now()) @map("data_envio")
+  status      StatusAgendamento @default(PENDENTE)
+  notas       String?
+  criadoEm    DateTime          @default(now()) @map("criado_em")
+  atualizadoEm DateTime         @updatedAt @map("atualizado_em")
+
+  @@index([status])
+  @@index([tratamentoId])
+  @@index([dataEnvio])
+  @@map("agendamentos")
+}
+
+model Avaliacao {
+  id           String   @id @default(uuid())
+  nome         String
+  avatar       String?  @default("")
+  nota         Int      // 1-5
+  texto        String
+  dataAvaliacao DateTime @default(now()) @map("data_avaliacao")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+  aprovado     Boolean  @default(false)
+
+  @@index([aprovado])
+  @@index([dataAvaliacao])
+  @@map("avaliacoes")
+}
+
+model Usuario {
+  id            String       @id @default(uuid())
+  nome          String
+  email         String       @unique
+  senhaHash     String       @map("senha_hash")
+  role          RoleUsuario  @default(EDITOR)
+  ativo         Boolean      @default(true)
+  lastLogin     DateTime?    @map("last_login")
+  failedAttempts Int         @default(0) @map("failed_attempts")
+  lockedUntil   DateTime?    @map("locked_until")
+  criadoEm      DateTime     @default(now()) @map("criado_em")
+  atualizadoEm  DateTime     @updatedAt @map("atualizado_em")
+
+  @@index([email])
+  @@index([role])
+  @@map("usuarios")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  acao        String
+  entidade    String
+  entidadeId  String?  @map("entidade_id")
+  dadosAntigos Json?   @map("dados_antigos")
+  dadosNovos  Json?    @map("dados_novos")
+  ip          String?
+  userAgent   String?  @map("user_agent")
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  @@index([userId])
+  @@index([entidade, entidadeId])
+  @@index([criadoEm])
+  @@map("audit_logs")
+}

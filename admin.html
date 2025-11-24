@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="api-url" content="__API_URL__">
+  <title>Painel Admin - Clínica Odonto Azul</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f7fa;
+    }
+    .login-form {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: 50px auto;
+    }
+    .login-form h2 {
+      margin-bottom: 20px;
+      color: #0A4DA2;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      font-family: inherit;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    button {
+      padding: 12px 24px;
+      background: #0A4DA2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0b61d1;
+    }
+    button.danger {
+      background: #dc3545;
+    }
+    button.danger:hover {
+      background: #c82333;
+    }
+    button.success {
+      background: #28a745;
+    }
+    button.success:hover {
+      background: #218838;
+    }
+    button.secondary {
+      background: #6c757d;
+    }
+    button.secondary:hover {
+      background: #5a6268;
+    }
+    .dashboard {
+      display: none;
+    }
+    .dashboard.active {
+      display: block;
+    }
+    header {
+      background: linear-gradient(135deg, #0A4DA2, #0b61d1);
+      color: white;
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header h1 {
+      font-size: 24px;
+    }
+    .nav-tabs {
+      background: white;
+      border-bottom: 2px solid #e0e0e0;
+      display: flex;
+      padding: 0 30px;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .nav-tabs button {
+      padding: 15px 24px;
+      background: transparent;
+      color: #666;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    .nav-tabs button:hover {
+      background: #f8f9fa;
+      color: #0A4DA2;
+    }
+    .nav-tabs button.active {
+      color: #0A4DA2;
+      border-bottom-color: #0A4DA2;
+      background: transparent;
+    }
+    .page-content {
+      padding: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .page-header h2 {
+      color: #0A4DA2;
+      font-size: 24px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .stat-card .number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #0A4DA2;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    .status {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .status.PENDENTE { background: #fff3cd; color: #856404; }
+    .status.CONFIRMADO { background: #d4edda; color: #155724; }
+    .status.CANCELADO { background: #f8d7da; color: #721c24; }
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 14px;
+    }
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filters button {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+    .filters button.active {
+      background: #0b61d1;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-header h3 {
+      color: #0A4DA2;
+      font-size: 20px;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    .badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge.success { background: #d4edda; color: #155724; }
+    .badge.danger { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <!-- Login Section -->
+  <div id="login-section" class="login-form">
+    <h2>🔐 Login Admin</h2>
+    <div id="login-error"></div>
+    <input type="email" id="email" placeholder="Email" value="admin@clinica.com">
+    <input type="password" id="password" placeholder="Senha" value="Admin123!@">
+    <p style="font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 15px;">
+      💡 Email: <code>admin@clinica.com</code> | Senha: <code>Admin123!@</code>
+    </p>
+    <button onclick="login()">Entrar</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="dashboard">
+    <header>
+      <h1>📊 Painel Administrativo</h1>
+      <button class="danger" onclick="logout()">Sair</button>
+    </header>
+
+    <div class="nav-tabs">
+      <button onclick="showPage('dashboard')" class="active">📊 Dashboard</button>
+      <button onclick="showPage('tratamentos')">🦷 Tratamentos</button>
+      <button onclick="showPage('agendamentos')">📅 Agendamentos</button>
+      <button onclick="showPage('avaliacoes')">⭐ Avaliações</button>
+    </div>
+
+    <div class="page-content">
+      <!-- Dashboard Page -->
+      <div id="page-dashboard" class="page active">
+        <h2>Dashboard</h2>
+        <div class="stats">
+          <div class="stat-card">
+            <h3>Tratamentos</h3>
+            <div class="number" id="stat-tratamentos">-</div>
+          </div>
+          <div class="stat-card">
+            <h3>Agendamentos</h3>
+            <div class="number" id="stat-agendamentos">-</div>
+          </div>
+          <div class="stat-card">
+            <h3>Avaliações</h3>
+            <div class="number" id="stat-avaliacoes">-</div>
+          </div>
+          <div class="stat-card">
+            <h3>Avaliações Pendentes</h3>
+            <div class="number" id="stat-pendentes">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tratamentos Page -->
+      <div id="page-tratamentos" class="page">
+        <div class="page-header">
+          <h2>🦷 Tratamentos</h2>
+          <button onclick="openTratamentoModal()">+ Novo Tratamento</button>
+        </div>
+        <div class="section">
+          <div id="tratamentos-loading" class="loading">Carregando...</div>
+          <table id="tratamentos-table" style="display: none;">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Slug</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tratamentos-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Agendamentos Page -->
+      <div id="page-agendamentos" class="page">
+        <div class="page-header">
+          <h2>📅 Agendamentos</h2>
+        </div>
+        <div class="filters">
+          <button onclick="filterAgendamentos(null)" class="active">Todos</button>
+          <button onclick="filterAgendamentos('PENDENTE')">Pendentes</button>
+          <button onclick="filterAgendamentos('CONFIRMADO')">Confirmados</button>
+          <button onclick="filterAgendamentos('CANCELADO')">Cancelados</button>
+        </div>
+        <div class="section">
+          <div id="agendamentos-loading" class="loading">Carregando...</div>
+          <table id="agendamentos-table" style="display: none;">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Tratamento</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="agendamentos-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Avaliações Page -->
+      <div id="page-avaliacoes" class="page">
+        <div class="page-header">
+          <h2>⭐ Avaliações</h2>
+          <button onclick="openAvaliacaoModal()">+ Nova Avaliação</button>
+        </div>
+        <div class="section">
+          <div id="avaliacoes-loading" class="loading">Carregando...</div>
+          <table id="avaliacoes-table" style="display: none;">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>Nota</th>
+                <th>Texto</th>
+                <th>Aprovado</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="avaliacoes-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tratamento -->
+  <div id="modal-tratamento" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-tratamento-title">Novo Tratamento</h3>
+        <button class="close-btn" onclick="closeTratamentoModal()">&times;</button>
+      </div>
+      <div id="modal-tratamento-error"></div>
+      <form id="form-tratamento" onsubmit="saveTratamento(event)">
+        <input type="hidden" id="tratamento-id">
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" id="tratamento-nome" required>
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea id="tratamento-descricao"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Slug *</label>
+          <input type="text" id="tratamento-slug" required>
+        </div>
+        <div class="form-group">
+          <label>Imagem (URL)</label>
+          <input type="text" id="tratamento-imagem">
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="tratamento-ativo" checked> Ativo
+          </label>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="secondary" onclick="closeTratamentoModal()">Cancelar</button>
+          <button type="submit">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Avaliação -->
+  <div id="modal-avaliacao" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-avaliacao-title">Nova Avaliação</h3>
+        <button class="close-btn" onclick="closeAvaliacaoModal()">&times;</button>
+      </div>
+      <div id="modal-avaliacao-error"></div>
+      <form id="form-avaliacao" onsubmit="saveAvaliacao(event)">
+        <input type="hidden" id="avaliacao-id">
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" id="avaliacao-nome" required>
+        </div>
+        <div class="form-group">
+          <label>Avatar (Iniciais)</label>
+          <input type="text" id="avaliacao-avatar" maxlength="2" placeholder="Ex: GL">
+        </div>
+        <div class="form-group">
+          <label>Nota *</label>
+          <select id="avaliacao-nota" required>
+            <option value="5">5 ⭐⭐⭐⭐⭐</option>
+            <option value="4">4 ⭐⭐⭐⭐</option>
+            <option value="3">3 ⭐⭐⭐</option>
+            <option value="2">2 ⭐⭐</option>
+            <option value="1">1 ⭐</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Texto *</label>
+          <textarea id="avaliacao-texto" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="avaliacao-aprovado" checked> Aprovado
+          </label>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="secondary" onclick="closeAvaliacaoModal()">Cancelar</button>
+          <button type="submit">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Configuração dinâmica da API URL
+    const getApiUrl = () => {
+      const metaTag = document.querySelector('meta[name="api-url"]');
+      if (metaTag && metaTag.content && metaTag.content !== '__API_URL__') {
+        return metaTag.content;
+      }
+      // Fallback para localhost em desenvolvimento
+      return window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000/api' 
+        : 'https://seu-backend.up.railway.app/api';
+    };
+    const API_URL = getApiUrl();
+    let token = localStorage.getItem('adminToken');
+    let currentAgendamentoFilter = null;
+
+    // Testar conexão
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (token) {
+        checkAuth();
+      }
+    });
+
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('login-error');
+
+      errorDiv.innerHTML = '';
+
+      try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          token = data.data.accessToken;
+          localStorage.setItem('adminToken', token);
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('dashboard').classList.add('active');
+          loadDashboard();
+        } else {
+          errorDiv.innerHTML = `<div class="error">${data.error?.message || 'Erro ao fazer login'}</div>`;
+        }
+      } catch (error) {
+        errorDiv.innerHTML = `<div class="error">Erro de conexão: ${error.message}</div>`;
+      }
+    }
+
+    async function checkAuth() {
+      try {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('dashboard').classList.add('active');
+          loadDashboard();
+        } else {
+          localStorage.removeItem('adminToken');
+          token = null;
+        }
+      } catch (error) {
+        localStorage.removeItem('adminToken');
+        token = null;
+      }
+    }
+
+    function showPage(page) {
+      // Atualizar tabs
+      document.querySelectorAll('.nav-tabs button').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Mostrar página
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(`page-${page}`).classList.add('active');
+
+      // Carregar dados se necessário
+      if (page === 'tratamentos') loadTratamentos();
+      else if (page === 'agendamentos') loadAgendamentos();
+      else if (page === 'avaliacoes') loadAvaliacoes();
+      else if (page === 'dashboard') loadStats();
+    }
+
+    async function loadDashboard() {
+      await loadStats();
+    }
+
+    async function loadStats() {
+      try {
+        const [tratamentos, agendamentos, avaliacoes] = await Promise.all([
+          fetch(`${API_URL}/tratamentos?limit=100`).then(r => r.json()),
+          fetch(`${API_URL}/agendamento`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }).then(r => r.json()),
+          fetch(`${API_URL}/avaliacoes?limit=100`).then(r => r.json())
+        ]);
+
+        document.getElementById('stat-tratamentos').textContent = 
+          tratamentos.success ? (tratamentos.pagination?.total || tratamentos.data?.length || 0) : '-';
+        document.getElementById('stat-agendamentos').textContent = 
+          agendamentos.success ? (agendamentos.pagination?.total || agendamentos.data?.length || 0) : '-';
+        document.getElementById('stat-avaliacoes').textContent = 
+          avaliacoes.success ? (avaliacoes.pagination?.total || avaliacoes.data?.length || 0) : '-';
+
+        if (avaliacoes.success) {
+          const pendentes = avaliacoes.data?.filter(a => !a.aprovado).length || 0;
+          document.getElementById('stat-pendentes').textContent = pendentes;
+        }
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+      }
+    }
+
+    // ============ TRATAMENTOS ============
+    async function loadTratamentos() {
+      const loading = document.getElementById('tratamentos-loading');
+      const table = document.getElementById('tratamentos-table');
+      const body = document.getElementById('tratamentos-body');
+
+      try {
+        loading.style.display = 'block';
+        table.style.display = 'none';
+
+        const response = await fetch(`${API_URL}/tratamentos?limit=100`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          loading.style.display = 'none';
+          table.style.display = 'table';
+
+          body.innerHTML = data.data.map(t => `
+            <tr>
+              <td>${t.nome}</td>
+              <td>${(t.descricao || '').substring(0, 80)}${(t.descricao || '').length > 80 ? '...' : ''}</td>
+              <td>${t.slug}</td>
+              <td>${t.ativo ? '<span class="badge success">Ativo</span>' : '<span class="badge danger">Inativo</span>'}</td>
+              <td class="actions">
+                <button class="btn-small" onclick="editTratamento('${t.id || ''}')">Editar</button>
+                <button class="btn-small danger" onclick="deleteTratamento('${t.id || ''}', '${(t.nome || '').replace(/'/g, "\\'")}')">Excluir</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        loading.innerHTML = `<div class="error">Erro ao carregar tratamentos: ${error.message}</div>`;
+      }
+    }
+
+    function openTratamentoModal(id = null) {
+      const modal = document.getElementById('modal-tratamento');
+      const title = document.getElementById('modal-tratamento-title');
+      const form = document.getElementById('form-tratamento');
+      const errorDiv = document.getElementById('modal-tratamento-error');
+      const idInput = document.getElementById('tratamento-id');
+      
+      // Limpar erros
+      errorDiv.innerHTML = '';
+      
+      // Validar ID antes de continuar
+      const isEdit = id && id !== 'null' && id !== 'undefined' && id !== '';
+      
+      if (isEdit) {
+        title.textContent = 'Editar Tratamento';
+        // Limpar formulário mas manter o ID input separado
+        form.reset();
+        if (idInput) idInput.value = id;
+        // Carregar dados do tratamento
+        loadTratamentoData(id);
+      } else {
+        title.textContent = 'Novo Tratamento';
+        // Limpar tudo para novo tratamento
+        form.reset();
+        if (idInput) idInput.value = '';
+        document.getElementById('tratamento-ativo').checked = true;
+      }
+      
+      modal.classList.add('active');
+    }
+
+    async function loadTratamentoData(id) {
+      const errorDiv = document.getElementById('modal-tratamento-error');
+      errorDiv.innerHTML = '';
+
+      if (!id || id === 'null' || id === 'undefined' || id === '') {
+        errorDiv.innerHTML = '<div class="error">Erro: ID do tratamento inválido</div>';
+        return;
+      }
+
+      try {
+        console.log('Carregando tratamento com ID:', id);
+        
+        const response = await fetch(`${API_URL}/tratamentos/id/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          const t = data.data;
+          console.log('Tratamento carregado:', t);
+          
+          // Garantir que o ID está sendo salvo
+          const idInput = document.getElementById('tratamento-id');
+          if (idInput) {
+            idInput.value = t.id || id;
+            console.log('ID salvo no campo hidden:', idInput.value);
+          }
+          
+          document.getElementById('tratamento-nome').value = t.nome || '';
+          document.getElementById('tratamento-descricao').value = t.descricao || '';
+          document.getElementById('tratamento-slug').value = t.slug || '';
+          document.getElementById('tratamento-imagem').value = t.imagem || '';
+          document.getElementById('tratamento-ativo').checked = t.ativo !== false;
+        } else {
+          errorDiv.innerHTML = `<div class="error">Erro ao carregar tratamento: ${data.error?.message || 'Tratamento não encontrado'}</div>`;
+        }
+      } catch (error) {
+        console.error('Erro ao carregar tratamento:', error);
+        errorDiv.innerHTML = `<div class="error">Erro ao carregar tratamento: ${error.message}</div>`;
+      }
+    }
+
+    async function saveTratamento(e) {
+      e.preventDefault();
+      const errorDiv = document.getElementById('modal-tratamento-error');
+      errorDiv.innerHTML = '';
+
+      const idInput = document.getElementById('tratamento-id');
+      const id = idInput ? idInput.value.trim() : '';
+      const nome = document.getElementById('tratamento-nome').value.trim();
+      const descricao = document.getElementById('tratamento-descricao').value.trim();
+      const slug = document.getElementById('tratamento-slug').value.trim();
+      const imagem = document.getElementById('tratamento-imagem').value.trim();
+      const ativo = document.getElementById('tratamento-ativo').checked;
+
+      // Validar nome obrigatório
+      if (!nome) {
+        errorDiv.innerHTML = '<div class="error">Nome é obrigatório</div>';
+        return;
+      }
+
+      // Se está editando, validar ID
+      const isEdit = id && id !== '' && id !== 'null' && id !== 'undefined';
+      
+      if (isEdit && !id) {
+        errorDiv.innerHTML = '<div class="error">Erro: ID do tratamento não encontrado. Recarregue a página e tente novamente.</div>';
+        return;
+      }
+
+      // Preparar dados - remover campos vazios para update
+      const data = {
+        nome,
+        ativo
+      };
+
+      // Adicionar campos opcionais apenas se preenchidos
+      if (descricao) data.descricao = descricao;
+      if (slug) data.slug = slug;
+      if (imagem) data.imagem = imagem;
+
+      try {
+        // Validar ID uma última vez antes de enviar
+        if (isEdit && (!id || id === '' || id === 'null' || id === 'undefined')) {
+          errorDiv.innerHTML = '<div class="error">Erro: ID do tratamento inválido ou não encontrado. Por favor, feche o modal e tente editar novamente.</div>';
+          console.error('ID inválido ao salvar:', id);
+          return;
+        }
+
+        // Construir URL de forma explícita e absoluta
+        let url;
+        if (isEdit) {
+          // Garantir que a URL seja exatamente o que esperamos
+          url = `http://localhost:3000/api/tratamentos/${id}`;
+          // Validar que a URL contém "tratamentos" (plural)
+          if (!url.includes('/tratamentos/')) {
+            throw new Error('URL incorreta construída. Deve conter /tratamentos/ (plural)');
+          }
+        } else {
+          url = `http://localhost:3000/api/tratamentos`;
+        }
+        
+        const method = isEdit ? 'PUT' : 'POST';
+
+        console.log('=== SALVANDO TRATAMENTO ===');
+        console.log('ID:', id);
+        console.log('isEdit:', isEdit);
+        console.log('API_URL:', API_URL);
+        console.log('URL completa construída:', url);
+        console.log('URL contém /tratamentos/ (plural):', url.includes('/tratamentos/'));
+        console.log('Method:', method);
+        console.log('Data:', data);
+        console.log('Token presente:', !!token);
+        console.log('===========================');
+
+        // Criar um novo objeto URL para validar
+        try {
+          const urlObj = new URL(url);
+          console.log('URL validada:', urlObj.href);
+        } catch (urlError) {
+          console.error('Erro ao validar URL:', urlError);
+          errorDiv.innerHTML = `<div class="error">Erro: URL inválida. ${urlError.message}</div>`;
+          return;
+        }
+
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        console.log('Status da resposta:', response.status);
+        console.log('Status text:', response.statusText);
+
+        const result = await response.json();
+        console.log('Resposta do servidor:', result);
+
+        if (response.ok) {
+          closeTratamentoModal();
+          loadTratamentos();
+          loadStats();
+        } else {
+          // Mostrar detalhes do erro de validação
+          let errorMsg = result.error?.message || 'Erro ao salvar tratamento';
+          if (result.error?.details && Array.isArray(result.error.details)) {
+            errorMsg += '<br>' + result.error.details.map(d => `- ${d.message || d}`).join('<br>');
+          }
+          errorDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
+        }
+      } catch (error) {
+        errorDiv.innerHTML = `<div class="error">Erro: ${error.message}</div>`;
+      }
+    }
+
+    async function editTratamento(id) {
+      openTratamentoModal(id);
+    }
+
+    async function deleteTratamento(id, nome) {
+      if (!confirm(`Tem certeza que deseja excluir o tratamento "${nome}"?`)) return;
+
+      try {
+        const response = await fetch(`${API_URL}/tratamentos/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          loadTratamentos();
+          loadStats();
+        } else {
+          const data = await response.json();
+          alert(data.error?.message || 'Erro ao excluir tratamento');
+        }
+      } catch (error) {
+        alert(`Erro: ${error.message}`);
+      }
+    }
+
+    function closeTratamentoModal() {
+      document.getElementById('modal-tratamento').classList.remove('active');
+    }
+
+    // ============ AGENDAMENTOS ============
+    function filterAgendamentos(status) {
+      currentAgendamentoFilter = status;
+      document.querySelectorAll('.filters button').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      loadAgendamentos();
+    }
+
+    async function loadAgendamentos() {
+      const loading = document.getElementById('agendamentos-loading');
+      const table = document.getElementById('agendamentos-table');
+      const body = document.getElementById('agendamentos-body');
+
+      try {
+        loading.style.display = 'block';
+        table.style.display = 'none';
+
+        let url = `${API_URL}/agendamento?limit=100&order=desc`;
+        if (currentAgendamentoFilter) {
+          url += `&status=${currentAgendamentoFilter}`;
+        }
+
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          loading.style.display = 'none';
+          table.style.display = 'table';
+
+          body.innerHTML = data.data.map(ag => `
+            <tr>
+              <td>${new Date(ag.dataAgendada || ag.dataEnvio || ag.criadoEm).toLocaleDateString('pt-BR')}</td>
+              <td>${ag.nome}</td>
+              <td>${ag.email}</td>
+              <td>${ag.telefone}</td>
+              <td>${ag.tratamento?.nome || 'N/A'}</td>
+              <td><span class="status ${ag.status}">${ag.status}</span></td>
+              <td class="actions">
+                <select onchange="updateAgendamentoStatus('${ag.id}', this.value)" class="btn-small">
+                  <option value="PENDENTE" ${ag.status === 'PENDENTE' ? 'selected' : ''}>Pendente</option>
+                  <option value="CONFIRMADO" ${ag.status === 'CONFIRMADO' ? 'selected' : ''}>Confirmar</option>
+                  <option value="CANCELADO" ${ag.status === 'CANCELADO' ? 'selected' : ''}>Cancelar</option>
+                </select>
+                <button class="btn-small danger" onclick="deleteAgendamento('${ag.id}', '${ag.nome}')">Excluir</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        loading.innerHTML = `<div class="error">Erro ao carregar agendamentos: ${error.message}</div>`;
+      }
+    }
+
+    async function updateAgendamentoStatus(id, status) {
+      try {
+        const response = await fetch(`${API_URL}/agendamento/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+
+        if (response.ok) {
+          loadAgendamentos();
+          loadStats();
+        } else {
+          const data = await response.json();
+          alert(data.error?.message || 'Erro ao atualizar status');
+        }
+      } catch (error) {
+        alert(`Erro: ${error.message}`);
+      }
+    }
+
+    async function deleteAgendamento(id, nome) {
+      if (!confirm(`Tem certeza que deseja excluir o agendamento de "${nome}"?`)) return;
+
+      try {
+        const response = await fetch(`${API_URL}/agendamento/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          loadAgendamentos();
+          loadStats();
+        } else {
+          const data = await response.json();
+          alert(data.error?.message || 'Erro ao excluir agendamento');
+        }
+      } catch (error) {
+        alert(`Erro: ${error.message}`);
+      }
+    }
+
+    // ============ AVALIAÇÕES ============
+    async function loadAvaliacoes() {
+      const loading = document.getElementById('avaliacoes-loading');
+      const table = document.getElementById('avaliacoes-table');
+      const body = document.getElementById('avaliacoes-body');
+
+      try {
+        loading.style.display = 'block';
+        table.style.display = 'none';
+
+        // Carregar TODAS as avaliações (aprovadas e não aprovadas) para o admin
+        const response = await fetch(`${API_URL}/avaliacoes?limit=100&orderBy=dataAvaliacao&order=desc`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data && Array.isArray(data.data)) {
+          loading.style.display = 'none';
+          table.style.display = 'table';
+
+          body.innerHTML = data.data.map(av => `
+            <tr>
+              <td>${new Date(av.dataAvaliacao || av.criadoEm).toLocaleDateString('pt-BR')}</td>
+              <td>${av.nome} ${av.avatar ? `(${av.avatar})` : ''}</td>
+              <td>${'⭐'.repeat(av.nota || 5)}</td>
+              <td>${(av.texto || '').substring(0, 100)}${(av.texto || '').length > 100 ? '...' : ''}</td>
+              <td>${av.aprovado ? '<span class="badge success">Sim</span>' : '<span class="badge danger">Não</span>'}</td>
+              <td class="actions">
+                <button class="btn-small" onclick="editAvaliacao('${av.id || ''}')">Editar</button>
+                <button class="btn-small ${av.aprovado ? 'danger' : 'success'}" onclick="toggleAvaliacaoAprovado('${av.id || ''}', ${!av.aprovado})">
+                  ${av.aprovado ? 'Reprovar' : 'Aprovar'}
+                </button>
+                <button class="btn-small danger" onclick="deleteAvaliacao('${av.id || ''}', '${(av.nome || '').replace(/'/g, "\\'")}')">Excluir</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        loading.innerHTML = `<div class="error">Erro ao carregar avaliações: ${error.message}</div>`;
+      }
+    }
+
+    function openAvaliacaoModal(id = null) {
+      const modal = document.getElementById('modal-avaliacao');
+      const title = document.getElementById('modal-avaliacao-title');
+      const form = document.getElementById('form-avaliacao');
+      
+      form.reset();
+      document.getElementById('modal-avaliacao-error').innerHTML = '';
+      document.getElementById('avaliacao-id').value = '';
+      
+      if (id && id !== 'null' && id !== 'undefined') {
+        title.textContent = 'Editar Avaliação';
+        loadAvaliacaoData(id);
+      } else {
+        title.textContent = 'Nova Avaliação';
+        document.getElementById('avaliacao-aprovado').checked = true;
+      }
+      
+      modal.classList.add('active');
+    }
+
+    async function loadAvaliacaoData(id) {
+      if (!id || id === 'null' || id === 'undefined') {
+        document.getElementById('modal-avaliacao-error').innerHTML = 
+          `<div class="error">Erro: ID da avaliação inválido</div>`;
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/avaliacoes/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          const av = data.data;
+          document.getElementById('avaliacao-id').value = av.id;
+          document.getElementById('avaliacao-nome').value = av.nome || '';
+          document.getElementById('avaliacao-avatar').value = av.avatar || '';
+          document.getElementById('avaliacao-nota').value = av.nota || 5;
+          document.getElementById('avaliacao-texto').value = av.texto || '';
+          document.getElementById('avaliacao-aprovado').checked = av.aprovado !== false;
+        } else {
+          document.getElementById('modal-avaliacao-error').innerHTML = 
+            `<div class="error">Erro ao carregar avaliação: ${data.error?.message || 'Avaliação não encontrada'}</div>`;
+        }
+      } catch (error) {
+        document.getElementById('modal-avaliacao-error').innerHTML = 
+          `<div class="error">Erro ao carregar avaliação: ${error.message}</div>`;
+      }
+    }
+
+    async function saveAvaliacao(e) {
+      e.preventDefault();
+      const errorDiv = document.getElementById('modal-avaliacao-error');
+      errorDiv.innerHTML = '';
+
+      const id = document.getElementById('avaliacao-id').value;
+      const nome = document.getElementById('avaliacao-nome').value.trim();
+      const avatar = document.getElementById('avaliacao-avatar').value.trim();
+      const notaValue = document.getElementById('avaliacao-nota').value;
+      const texto = document.getElementById('avaliacao-texto').value.trim();
+      const aprovado = document.getElementById('avaliacao-aprovado').checked;
+
+      // Validações básicas
+      if (!nome || nome.length < 3) {
+        errorDiv.innerHTML = '<div class="error">Nome deve ter no mínimo 3 caracteres</div>';
+        return;
+      }
+
+      if (!texto || texto.length < 10) {
+        errorDiv.innerHTML = '<div class="error">Texto deve ter no mínimo 10 caracteres</div>';
+        return;
+      }
+
+      const nota = parseInt(notaValue);
+      if (isNaN(nota) || nota < 1 || nota > 5) {
+        errorDiv.innerHTML = '<div class="error">Nota deve ser um número entre 1 e 5</div>';
+        return;
+      }
+
+      // Preparar dados
+      const data = {
+        nome: nome,
+        nota: nota,
+        texto: texto,
+        aprovado: aprovado
+      };
+
+      // Adicionar avatar apenas se preenchido
+      if (avatar) {
+        data.avatar = avatar;
+      }
+
+      console.log('📤 Enviando avaliação:', data);
+      console.log('URL:', id ? `${API_URL}/avaliacoes/${id}` : `${API_URL}/avaliacoes`);
+
+      try {
+        const url = id ? `${API_URL}/avaliacoes/${id}` : `${API_URL}/avaliacoes`;
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        console.log('📥 Resposta recebida:', response.status, response.statusText);
+
+        const result = await response.json();
+        console.log('📥 Dados da resposta:', result);
+
+        if (response.ok && result.success) {
+          console.log('✅ Avaliação salva com sucesso!', result);
+          alert(result.message || 'Avaliação salva com sucesso!');
+          closeAvaliacaoModal();
+          // Aguardar um pouco antes de recarregar para garantir que o backend processou
+          setTimeout(() => {
+            loadAvaliacoes();
+            loadStats();
+          }, 500);
+        } else {
+          console.error('❌ Erro ao salvar avaliação:', result);
+          let errorMsg = result.error?.message || 'Erro ao salvar avaliação';
+          if (result.error?.details && Array.isArray(result.error.details)) {
+            errorMsg += '<br><br><strong>Detalhes:</strong><br>' + result.error.details.map(d => `• ${d.path || ''}: ${d.message || d}`).join('<br>');
+          }
+          errorDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
+        }
+      } catch (error) {
+        console.error('❌ Erro ao enviar requisição:', error);
+        errorDiv.innerHTML = `<div class="error">Erro ao enviar requisição: ${error.message}</div>`;
+      }
+    }
+
+    async function editAvaliacao(id) {
+      openAvaliacaoModal(id);
+    }
+
+    async function toggleAvaliacaoAprovado(id, aprovado) {
+      try {
+        const response = await fetch(`${API_URL}/avaliacoes/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ aprovado })
+        });
+
+        if (response.ok) {
+          loadAvaliacoes();
+          loadStats();
+        } else {
+          const data = await response.json();
+          alert(data.error?.message || 'Erro ao atualizar avaliação');
+        }
+      } catch (error) {
+        alert(`Erro: ${error.message}`);
+      }
+    }
+
+    async function deleteAvaliacao(id, nome) {
+      if (!confirm(`Tem certeza que deseja excluir a avaliação de "${nome}"?`)) return;
+
+      try {
+        const response = await fetch(`${API_URL}/avaliacoes/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          loadAvaliacoes();
+          loadStats();
+        } else {
+          const data = await response.json();
+          alert(data.error?.message || 'Erro ao excluir avaliação');
+        }
+      } catch (error) {
+        alert(`Erro: ${error.message}`);
+      }
+    }
+
+    function closeAvaliacaoModal() {
+      document.getElementById('modal-avaliacao').classList.remove('active');
+    }
+
+    function logout() {
+      localStorage.removeItem('adminToken');
+      token = null;
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('dashboard').classList.remove('active');
+    }
+  </script>
+</body>
+</html>

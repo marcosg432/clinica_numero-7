@@ -1,0 +1,68 @@
+{
+  "name": "clinica-odonto-azul-api",
+  "version": "1.0.0",
+  "description": "API REST para Clínica Odonto Azul",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "seed": "node src/database/seed.js",
+    "seed:admin": "node criar-admin-rapido.js",
+    "fix:admin": "node fix-admin.js",
+    "test": "NODE_ENV=test jest --coverage",
+    "test:watch": "NODE_ENV=test jest --watch",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "build": "prisma generate && node --check src/server.js",
+    "postinstall": "prisma generate",
+    "docker:build": "docker build -t clinica-odonto-api .",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "prisma:studio": "prisma studio",
+    "generate:docs": "node src/docs/generate-openapi.js"
+  },
+  "keywords": [
+    "api",
+    "rest",
+    "clinica",
+    "odonto"
+  ],
+  "author": "Clínica Odonto Azul",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.7.1",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "http-status-codes": "^2.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pino": "^8.16.2",
+    "pino-pretty": "^10.2.3",
+    "swagger-ui-express": "^5.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "zod": "^3.22.4",
+    "@sendgrid/mail": "^8.1.0",
+    "nodemailer": "^6.9.7"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^8.3.1",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "prisma": "^5.7.1",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

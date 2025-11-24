@@ -1,0 +1,14 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Force LF line endings for scripts
+*.js text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+
+# Force CRLF for batch files on Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+

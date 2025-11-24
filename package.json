@@ -1,0 +1,17 @@
+{
+  "name": "clinica-odonto-azul-frontend",
+  "version": "1.0.0",
+  "description": "Frontend para Clínica Odonto Azul",
+  "scripts": {
+    "build": "node vercel-build.js",
+    "vercel-build": "node vercel-build.js"
+  },
+  "keywords": [
+    "clinica",
+    "odonto",
+    "frontend"
+  ],
+  "author": "Clínica Odonto Azul",
+  "license": "MIT"
+}
+

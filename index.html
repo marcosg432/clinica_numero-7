@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="api-url" content="__API_URL__">
+  <title>Clínica Odonto Azul | Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">Clínica Odonto Azul</div>
+    <button class="nav-toggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <nav class="site-nav" data-mobile="true">
+      <a href="index.html" class="active">Home</a>
+      <a href="tratamentos.html">Tratamentos</a>
+      <a href="agendamento.html">Agendamento</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-media img-placeholder" data-label="Dr. Henrique Lima" style="--photo: url('assets/img/home/home-hero-doutor.webp');"></div>
+      <div class="hero-content">
+        <p class="eyebrow">Seu novo sorriso começa aqui</p>
+        <h1>Transforme seu sorriso</h1>
+        <p>Cuidado especializado, tecnologia de ponta e um time pronto para acolher você em cada etapa.</p>
+        <a class="btn" href="agendamento.html">Agendar consulta</a>
+      </div>
+    </section>
+
+    <section class="section about">
+      <div class="section-header">
+        <p class="eyebrow">Quem somos</p>
+        <h2>Profissionais dedicados à sua autoestima</h2>
+      </div>
+      <div class="about-card">
+        <div class="img-placeholder large" data-label="Equipe Odonto Azul" style="--photo: url('assets/img/home/home-equipe.webp');"></div>
+        <div class="about-text">
+          <p>Há mais de 10 anos combinamos odontologia moderna e atendimento humanizado em Campo Grande-MS. Nossa história nasce do compromisso de transformar sorrisos com segurança, acolhimento e resultados naturais.</p>
+          <p>Hoje, somos referência em reabilitação estética, harmonização facial e tratamentos preventivos completos para toda a família.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section gallery">
+      <div class="section-header">
+        <p class="eyebrow">Conheça nosso espaço</p>
+        <h2>Fotos da clínica e dos doutores</h2>
+      </div>
+      <div class="gallery-grid">
+        <div class="img-placeholder" data-label="Recepção acolhedora" style="--photo: url('assets/img/home/galeria-recepcao.webp');"></div>
+        <div class="img-placeholder" data-label="Sala de procedimentos" style="--photo: url('assets/img/home/galeria-procedimento.webp');"></div>
+        <div class="img-placeholder" data-label="Equipe clínica" style="--photo: url('assets/img/home/galeria-equipe.webp');"></div>
+        <div class="img-placeholder" data-label="Antes e depois real" style="--photo: url('assets/img/home/galeria-antes-depois.webp');"></div>
+      </div>
+    </section>
+
+    <section class="section treatments">
+      <div class="section-header">
+        <p class="eyebrow">Transforme sua autoestima</p>
+        <h2>Tratamentos com tecnologia de ponta</h2>
+      </div>
+      <p class="section-lead">Clique em "Saiba mais" para entender cada protocolo estético e funcional.</p>
+      <div class="treatments-carousel" id="treatments-carousel">
+        <!-- Tratamentos serão carregados aqui dinamicamente pela API -->
+        <div style="text-align: center; padding: 40px; color: #666;">
+          <p>Carregando tratamentos...</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reviews" id="avaliacoes">
+      <div class="section-header">
+        <p class="eyebrow">Transforme sua autoestima</p>
+        <h2>Avaliações dos clientes</h2>
+      </div>
+      <p class="section-lead">Feedbacks reais coletados no Google Reviews. Veja como nossos pacientes descrevem a experiência.</p>
+      <div class="reviews-grid">
+        <article class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">GL</div>
+            <div>
+              <strong>Gabriela Lopes</strong>
+              <div class="review-meta">Google Reviews · ⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <p class="review-text">“Atendimento muito acolhedor. Fiz lentes de contato dental e fiquei impressionada com o planejamento digital e o cuidado no ajuste final.”</p>
+          <span class="review-date">Avaliado em out/2025</span>
+        </article>
+        <article class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">RM</div>
+            <div>
+              <strong>Rafael Mendes</strong>
+              <div class="review-meta">Google Reviews · ⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <p class="review-text">“Passei pelo clareamento a laser e o resultado saiu muito acima da expectativa. Zero sensibilidade e equipe super atenciosa.”</p>
+          <span class="review-date">Avaliado em set/2025</span>
+        </article>
+        <article class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">VC</div>
+            <div>
+              <strong>Viviane Campos</strong>
+              <div class="review-meta">Google Reviews · ⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <p class="review-text">“Fiz implante de carga imediata e já saí mastigando normalmente. Eles explicaram tudo com clareza e o pós foi bem acompanhado.”</p>
+          <span class="review-date">Avaliado em ago/2025</span>
+        </article>
+        <article class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">LC</div>
+            <div>
+              <strong>Lucas Carvalho</strong>
+              <div class="review-meta">Google Reviews · ⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <p class="review-text">“Usei alinhadores com a equipe e adorei o acompanhamento digital. Tudo prático, sem perder consultas.”</p>
+          <span class="review-date">Avaliado em jul/2025</span>
+        </article>
+        <article class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">MS</div>
+            <div>
+              <strong>Mariana Souza</strong>
+              <div class="review-meta">Google Reviews · ⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <p class="review-text">“Harmonização facial com resultado super natural. Adorei o cuidado e a explicação de cada etapa.”</p>
+          <span class="review-date">Avaliado em jun/2025</span>
+        </article>
+        <article class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">DP</div>
+            <div>
+              <strong>Diego Pontes</strong>
+              <div class="review-meta">Google Reviews · ⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <p class="review-text">“Equipe nota mil! Corrigi manchas antigas com o clareamento e recebi todo suporte pós-procedimento.”</p>
+          <span class="review-date">Avaliado em mai/2025</span>
+        </article>
+        <article class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">AS</div>
+            <div>
+              <strong>Ana Serafim</strong>
+              <div class="review-meta">Google Reviews · ⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <p class="review-text">“Passei pela harmonização e pelos alinhadores transparentes. Atendimento impecável e comunicação clara em todas as etapas.”</p>
+          <span class="review-date">Avaliado em abr/2025</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section final-cta">
+      <p class="eyebrow">Avaliação rápida e sem compromisso</p>
+      <h2>Transforme sua autoestima hoje mesmo</h2>
+      <a class="btn" href="agendamento.html">Agendar consulta</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2025 Clínica Odonto Azul · (67) 99104-9439</p>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="tratamentos.html">Tratamentos</a>
+      <a href="agendamento.html">Agendamento</a>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/reviews.js?v=2"></script>
+  <script src="assets/js/treatments.js?v=2"></script>
+</body>
+</html>
+

@@ -1,0 +1,55 @@
+========================================
+  CLÍNICA ODONTO AZUL - INSTRUÇÕES
+========================================
+
+PROBLEMA: O servidor não está iniciando automaticamente no diretório correto.
+
+SOLUÇÃO MANUAL (MAIS RÁPIDA):
+
+1. ABRA O CMD OU POWERSHELL
+
+2. NAVEGUE ATÉ O DIRETÓRIO DO PROJETO:
+   cd "C:\Users\andre\OneDrive\Área de Trabalho\Cópia_de_numero_7"
+
+3. EXECUTE O SERVIDOR:
+   python -m http.server 8080
+
+4. MANTENHA O TERMINAL ABERTO!
+
+5. ABRA O NAVEGADOR E ACESSE:
+   http://localhost:8080/index.html
+   http://localhost:8080/admin.html
+
+========================================
+  OU USE O SCRIPT .bat
+========================================
+
+DÊ DUPLO CLIQUE NO ARQUIVO:
+  iniciar-servidor.bat
+
+Ele vai iniciar o servidor automaticamente.
+
+========================================
+  BACKEND (API)
+========================================
+
+Para iniciar o backend também:
+
+1. Abra OUTRO terminal
+2. Navegue até:
+   cd "C:\Users\andre\OneDrive\Área de Trabalho\Cópia_de_numero_7\backend"
+3. Execute:
+   npm run dev
+
+O backend ficará em: http://localhost:3000/api
+
+========================================
+  CREDENCIAIS ADMIN
+========================================
+
+Email: admin@clinicaodontoazul.com.br
+Senha: Admin123!@#
+
+========================================
+
+

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="api-url" content="__API_URL__">
+  <title>Clínica Odonto Azul | Agendamento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">Clínica Odonto Azul</div>
+    <button class="nav-toggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <nav class="site-nav" data-mobile="true">
+      <a href="index.html">Home</a>
+      <a href="tratamentos.html">Tratamentos</a>
+      <a href="agendamento.html" class="active">Agendamento</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="social-bar">
+      <p>Siga a clínica</p>
+      <div class="social-icons">
+        <a href="https://www.facebook.com/clinicaodontoazul" target="_blank" rel="noopener" aria-label="Facebook">
+          <span class="icon-facebook" aria-hidden="true"></span>
+        </a>
+        <a href="https://www.instagram.com/clinicaodontoazul" target="_blank" rel="noopener" aria-label="Instagram">
+          <span class="icon-instagram" aria-hidden="true"></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section schedule">
+      <div class="section-header">
+        <p class="eyebrow">Avaliação rápida e sem compromisso</p>
+        <h1>Agende sua consulta</h1>
+      </div>
+      <form class="schedule-form" id="form-agendamento">
+        <div id="agendamento-mensagem" style="display: none; padding: 15px; margin-bottom: 20px; border-radius: 8px; text-align: center;"></div>
+        <label>
+          Nome completo
+          <input type="text" id="nome" name="nome" placeholder="Digite seu nome" required>
+        </label>
+        <label>
+          Telefone
+          <input type="tel" id="telefone" name="telefone" placeholder="(67) 99104-9439" required>
+        </label>
+        <label>
+          E-mail
+          <input type="email" id="email" name="email" placeholder="voce@email.com" required>
+        </label>
+        <label>
+          Tratamento desejado
+          <select id="tratamento_id" name="tratamento_id" required>
+            <option value="">Carregando tratamentos...</option>
+          </select>
+        </label>
+        <button class="btn" type="submit" id="btn-enviar">Enviar agendamento</button>
+      </form>
+    </section>
+
+    <section class="section map-section">
+      <div class="section-header">
+        <p class="eyebrow">Clique e agende sua consulta</p>
+        <h2>Estamos em Campo Grande-MS</h2>
+      </div>
+      <div class="map-wrapper">
+        <iframe title="Mapa da Clínica Odonto Azul"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3673.502910858728!2d-54.618933324962245!3d-20.73077636457943!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9486e5f9cb2f9b0f%3A0x2a612e672321d4d!2sCampo%20Grande%20-%20MS!5e0!3m2!1spt-BR!2sbr!4v1731800000"
+          width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <a class="map-link" href="https://maps.google.com/?q=Clínica+Odonto+Azul+Campo+Grande" target="_blank" rel="noopener">
+        Abrir diretamente no Google Maps
+      </a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2025 Clínica Odonto Azul · (67) 99104-9439</p>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="tratamentos.html">Tratamentos</a>
+    </div>
+    <p class="footer-note">Contato também pelo WhatsApp: (67) 99104-9439</p>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/agendamento.js"></script>
+</body>
+</html>
+
