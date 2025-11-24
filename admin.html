@@ -648,6 +648,11 @@
       }
     }
 
+    // Expor funções globalmente para botões
+    window.loadTratamentos = loadTratamentos;
+    window.loadAvaliacoes = loadAvaliacoes;
+    window.diagnoseConnection = diagnoseConnection;
+
     // Função para diagnosticar problemas
     async function diagnoseConnection() {
       const diagnostics = {
@@ -853,12 +858,28 @@
       console.log('✅ Tratamentos recebidos:', data);
       console.log(`📊 Total: ${data.data?.length || 0} tratamentos`);
 
+      console.log('📦 Processando resposta de tratamentos...');
+      console.log('  - success:', data.success);
+      console.log('  - data existe?', !!data.data);
+      console.log('  - data é array?', Array.isArray(data.data));
+      console.log('  - quantidade:', data.data?.length || 0);
+      
       if (data.success && data.data && Array.isArray(data.data)) {
         loading.style.display = 'none';
         table.style.display = 'table';
 
         if (data.data.length === 0) {
-          body.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Nenhum tratamento encontrado</td></tr>';
+          body.innerHTML = `
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
+                <div style="margin-bottom: 10px;">📭 Nenhum tratamento encontrado no banco de dados</div>
+                <div style="font-size: 0.9em; color: #999;">
+                  Clique em "+ Novo Tratamento" para criar o primeiro.
+                </div>
+              </td>
+            </tr>
+          `;
+          console.log('⚠️ Banco de dados está vazio para tratamentos');
         } else {
           body.innerHTML = data.data.map(t => `
           <tr>
@@ -875,8 +896,19 @@
         }
       } else {
         loading.style.display = 'none';
-        body.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #999;">Nenhum tratamento encontrado</td></tr>';
-        console.warn('⚠️ Resposta da API não contém dados válidos:', data);
+        body.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 40px; color: #d32f2f;">
+              <div style="margin-bottom: 10px;">⚠️ Erro ao processar resposta da API</div>
+              <div style="font-size: 0.9em; color: #999;">
+                Verifique o console (F12) para mais detalhes.<br>
+                Resposta recebida: ${JSON.stringify(data).substring(0, 200)}...
+              </div>
+            </td>
+          </tr>
+        `;
+        console.error('❌ Resposta da API não contém dados válidos:', data);
+        console.error('  - Estrutura esperada: { success: true, data: [...] }');
       }
     }
 
@@ -925,8 +957,20 @@
         return await handleTratamentosResponse(response, loading, table, body);
       } catch (error) {
         console.error('❌ Erro ao carregar tratamentos:', error);
+        console.error('  - Tipo:', error.name);
+        console.error('  - Mensagem:', error.message);
+        console.error('  - Stack:', error.stack);
+        
         loading.style.display = 'none';
-        loading.innerHTML = `<div class="error">Erro ao carregar tratamentos: ${error.message}<br><small>Verifique se você está logado e se o token é válido.</small></div>`;
+        const errorMsg = error.message || 'Erro desconhecido';
+        loading.innerHTML = `
+          <div class="error" style="padding: 20px; text-align: center;">
+            <strong>❌ Erro ao carregar tratamentos</strong><br>
+            <small>${errorMsg}</small><br><br>
+            <button onclick="loadTratamentos()" class="btn-small" style="margin-top: 10px;">🔄 Tentar Novamente</button>
+            <button onclick="diagnoseConnection()" class="btn-small" style="margin-top: 10px;">🔍 Diagnosticar Conexão</button>
+          </div>
+        `;
       }
     }
 
@@ -1277,12 +1321,28 @@
       console.log('✅ Avaliações recebidas:', data);
       console.log(`📊 Total: ${data.data?.length || 0} avaliações`);
 
+      console.log('📦 Processando resposta de avaliações...');
+      console.log('  - success:', data.success);
+      console.log('  - data existe?', !!data.data);
+      console.log('  - data é array?', Array.isArray(data.data));
+      console.log('  - quantidade:', data.data?.length || 0);
+      
       if (data.success && data.data && Array.isArray(data.data)) {
         loading.style.display = 'none';
         table.style.display = 'table';
 
         if (data.data.length === 0) {
-          body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Nenhuma avaliação encontrada</td></tr>';
+          body.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                <div style="margin-bottom: 10px;">📭 Nenhuma avaliação encontrada no banco de dados</div>
+                <div style="font-size: 0.9em; color: #999;">
+                  As avaliações criadas no site aparecerão aqui após serem aprovadas.
+                </div>
+              </td>
+            </tr>
+          `;
+          console.log('⚠️ Banco de dados está vazio para avaliações');
         } else {
           body.innerHTML = data.data.map(av => `
           <tr>
@@ -1303,8 +1363,19 @@
         }
       } else {
         loading.style.display = 'none';
-        body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">Nenhuma avaliação encontrada</td></tr>';
-        console.warn('⚠️ Resposta da API não contém dados válidos:', data);
+        body.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px; color: #d32f2f;">
+              <div style="margin-bottom: 10px;">⚠️ Erro ao processar resposta da API</div>
+              <div style="font-size: 0.9em; color: #999;">
+                Verifique o console (F12) para mais detalhes.<br>
+                Resposta recebida: ${JSON.stringify(data).substring(0, 200)}...
+              </div>
+            </td>
+          </tr>
+        `;
+        console.error('❌ Resposta da API não contém dados válidos:', data);
+        console.error('  - Estrutura esperada: { success: true, data: [...] }');
       }
     }
 
@@ -1355,8 +1426,20 @@
         return await handleAvaliacoesResponse(response, loading, table, body);
       } catch (error) {
         console.error('❌ Erro ao carregar avaliações:', error);
+        console.error('  - Tipo:', error.name);
+        console.error('  - Mensagem:', error.message);
+        console.error('  - Stack:', error.stack);
+        
         loading.style.display = 'none';
-        loading.innerHTML = `<div class="error">Erro ao carregar avaliações: ${error.message}<br><small>Verifique se você está logado e se o token é válido.</small></div>`;
+        const errorMsg = error.message || 'Erro desconhecido';
+        loading.innerHTML = `
+          <div class="error" style="padding: 20px; text-align: center;">
+            <strong>❌ Erro ao carregar avaliações</strong><br>
+            <small>${errorMsg}</small><br><br>
+            <button onclick="loadAvaliacoes()" class="btn-small" style="margin-top: 10px;">🔄 Tentar Novamente</button>
+            <button onclick="diagnoseConnection()" class="btn-small" style="margin-top: 10px;">🔍 Diagnosticar Conexão</button>
+          </div>
+        `;
       }
     }
 
