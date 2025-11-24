@@ -78,12 +78,22 @@ export function errorHandler(err, req, res, next) {
       });
     }
     // Outros erros do Prisma
+    logger.error({
+      err,
+      code: err.code,
+      meta: err.meta,
+    }, 'Prisma database error');
+    
     return res.status(400).json({
       success: false,
       error: {
         code: 'DATABASE_ERROR',
         message: 'Database operation failed',
-        ...(process.env.NODE_ENV !== 'production' && { details: err.message }),
+        ...(process.env.NODE_ENV !== 'production' && { 
+          details: err.message,
+          code: err.code,
+          meta: err.meta,
+        }),
       },
     });
   }
