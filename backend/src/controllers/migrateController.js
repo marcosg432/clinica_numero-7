@@ -43,6 +43,23 @@ export async function runMigrations(req, res) {
 
     logger.info('🔄 Executando migrações via HTTP endpoint...');
     
+    // Verificar se o diretório de migrações existe
+    const migrationsDir = join(__dirname, '..', '..', 'prisma', 'migrations');
+    const fs = await import('fs');
+    
+    try {
+      const migrationsExist = fs.existsSync(migrationsDir);
+      logger.info(`📁 Diretório de migrações existe: ${migrationsExist}`);
+      logger.info(`📁 Caminho: ${migrationsDir}`);
+      
+      if (migrationsExist) {
+        const migrations = fs.readdirSync(migrationsDir);
+        logger.info(`📋 Migrações encontradas: ${migrations.length}`, migrations);
+      }
+    } catch (err) {
+      logger.warn('⚠️  Não foi possível verificar diretório de migrações:', err.message);
+    }
+    
     try {
       const result = execSync('npx prisma migrate deploy', {
         cwd: join(__dirname, '..', '..'),
