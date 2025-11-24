@@ -11,21 +11,18 @@
       // Desenvolvimento local
       window.API_URL = 'http://localhost:3000/api';
     } else {
-      // Produção - pega da variável de ambiente ou usa padrão
-      // Vercel injeta variáveis via process.env no build, mas como é HTML estático,
-      // vamos usar uma variável de ambiente do Vercel que será substituída
-      window.API_URL = process.env.API_URL || 
-                       'https://seu-backend.up.railway.app/api';
-      
-      // Alternativa: definir diretamente no HTML via variável do Vercel
-      // ou usar o valor injetado pelo Vercel
+      // Produção - pega do meta tag primeiro
       const apiUrlFromMeta = document.querySelector('meta[name="api-url"]');
-      if (apiUrlFromMeta) {
+      if (apiUrlFromMeta && apiUrlFromMeta.content && apiUrlFromMeta.content !== '__API_URL__') {
         window.API_URL = apiUrlFromMeta.content;
+      } else {
+        // Fallback apenas se não encontrar no meta tag
+        window.API_URL = 'https://clinicanumero-7-production.up.railway.app/api';
       }
     }
   }
   
-  console.log('API URL configurada:', window.API_URL);
+  console.log('🔧 API URL configurada:', window.API_URL);
+  console.log('🌐 Hostname atual:', window.location.hostname);
 })();
 

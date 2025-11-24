@@ -1,30 +1,52 @@
 // Script para carregar tratamentos da API e sincronizar com o site público
 // Configuração dinâmica da API URL
 const getApiUrl = () => {
-  if (window.API_URL) return window.API_URL;
+  if (window.API_URL) {
+    console.log('✅ Usando window.API_URL existente:', window.API_URL);
+    return window.API_URL;
+  }
   const metaTag = document.querySelector('meta[name="api-url"]');
   if (metaTag && metaTag.content && metaTag.content !== '__API_URL__') {
+    console.log('✅ URL encontrada no meta tag:', metaTag.content);
     return metaTag.content;
   }
   // Fallback para localhost em desenvolvimento
-  return window.location.hostname === 'localhost' 
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+  const fallbackUrl = isLocalhost 
     ? 'http://localhost:3000/api' 
-    : 'https://seu-backend.up.railway.app/api';
+    : 'https://clinicanumero-7-production.up.railway.app/api';
+  console.warn('⚠️ Usando URL fallback:', fallbackUrl);
+  return fallbackUrl;
 };
+
 if (!window.API_URL) {
   window.API_URL = getApiUrl();
 }
 
 console.log('🔍 treatments.js carregado');
+console.log('🌐 API URL final:', window.API_URL);
 
 // Função para carregar tratamentos na home (index.html)
 async function loadTreatmentsHome() {
   console.log('📥 Carregando tratamentos para home...');
+  console.log('🔗 URL da requisição:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
+  
   try {
-    const response = await fetch(`${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
+    // Timeout de 10 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const response = await fetch(`${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`, {
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`❌ Erro HTTP ${response.status}:`, errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
     }
     
     const data = await response.json();
@@ -90,18 +112,42 @@ async function loadTreatmentsHome() {
   } catch (error) {
     console.error('❌ Erro ao carregar tratamentos na home:', error);
     console.error('Detalhes:', error.message);
-    // Se der erro, mantém o HTML estático
+    console.error('URL tentada:', `${window.API_URL}/tratamentos?ativo=true&limit=10&orderBy=criadoEm&order=desc`);
+    
+    // Mostrar mensagem de erro no carousel
+    const carousel = document.querySelector('.treatments-carousel') || document.getElementById('treatments-carousel');
+    if (carousel) {
+      if (error.name === 'AbortError') {
+        carousel.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;"><p>⏱️ Tempo de carregamento excedido. Verifique sua conexão.</p></div>';
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        carousel.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;"><p>🌐 Erro de conexão. Verifique se o backend está online.</p><p style="font-size: 0.9em; margin-top: 10px; color: #666;">URL: ' + window.API_URL + '</p></div>';
+      } else {
+        carousel.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;"><p>❌ Erro ao carregar tratamentos. Tente recarregar a página.</p></div>';
+      }
+    }
   }
 }
 
 // Função para carregar tratamentos na página tratamentos.html
 async function loadTreatmentsPage() {
   console.log('📥 Carregando tratamentos para página tratamentos.html...');
+  console.log('🔗 URL da requisição:', `${window.API_URL}/tratamentos?ativo=true&limit=100&orderBy=criadoEm&order=desc`);
+  
   try {
-    const response = await fetch(`${window.API_URL}/tratamentos?ativo=true&limit=100&orderBy=criadoEm&order=desc`);
+    // Timeout de 10 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const response = await fetch(`${window.API_URL}/tratamentos?ativo=true&limit=100&orderBy=criadoEm&order=desc`, {
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`❌ Erro HTTP ${response.status}:`, errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
     }
     
     const data = await response.json();
@@ -191,8 +237,16 @@ async function loadTreatmentsPage() {
   } catch (error) {
     console.error('❌ Erro ao carregar tratamentos na página:', error);
     console.error('Detalhes:', error.message);
+    console.error('URL tentada:', `${window.API_URL}/tratamentos?ativo=true&limit=100&orderBy=criadoEm&order=desc`);
     console.error('Stack:', error.stack);
-    // Se der erro, mantém o HTML estático
+    
+    // Mostrar mensagem de erro no console e manter HTML estático
+    if (error.name === 'AbortError') {
+      console.error('⏱️ Tempo de carregamento excedido (10 segundos)');
+    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      console.error('🌐 Erro de conexão - verifique se o backend está online em:', window.API_URL);
+    }
+    // Se der erro, mantém o HTML estático (não altera a página)
   }
 }
 
